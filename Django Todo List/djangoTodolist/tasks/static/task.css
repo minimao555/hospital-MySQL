@@ -1,0 +1,59 @@
+.center-column {
+    width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: aliceblue;
+    border-radius: 3px;
+    box-shadow: 6px 2px 30px 0;
+}
+
+input::placeholder {
+    color: lightslategrey;
+}
+
+.main_input {
+    width: 420px;
+    margin: 30px auto;
+}
+
+button {
+    border-radius: 5px;
+    border-width: 1px;
+    padding: 2px 5px;
+    margin-right: 5px;
+    background-color: #f1f1c6;
+}
+
+label {
+    font-family: "Fira Code SemiBold", serif;
+}
+
+.input-button {
+    border-radius: 5px;
+    border-width: 1px;
+    width: 80px;
+
+}
+
+.form-list {
+    background-color: #a7dcf8;
+    padding: 10px;
+    margin: 10px auto;
+    border-radius: 12px;
+}
+
+.input-group-ng {
+    position: relative;
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 70%;
+    margin: 5px auto;
+}
+
+.main-title {
+    font-family: "Fira Code SemiBold", "Microsoft YaHei",  serif;
+    font-size: 18px;
+    margin: 5px;
+    width: 370px;
+    display: inline-block;
+}
