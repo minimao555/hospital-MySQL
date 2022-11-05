@@ -1,15 +1,18 @@
 import random
 import csv
 import base64
+import radar
 sexList = ["男","女"]
 officeList = "内科、外科、儿科、妇科、眼科、耳鼻喉科、口腔科、皮肤科、中医科、针灸推拿科".split('、')
 doctorList = list() #doctorId+office
 patientList = list() #patientID+name
+patientDic = dict() #patientID:Disease
 headDoctorList = list() #id
 prescriptionList = list() #paymentID+patientID
 registrationList = list() #paymentID+patientID
 inspectionList = list() #paymentID+patientID
-medicalRecordsList = list() #medicalRecordsID+patientID+name
+medicalRecordsList = list() #medicalRecordsID+patientID+name+rusult
+officeNumList = [1,1,1,1,1,1,1,1,1,1]
 
 def generate_name(sex):
     lastNameList = "赵 钱 孙 李 周 吴 郑 王 贾 路 娄 危 江 童 颜 郭 冯 陈 褚 卫 蒋 沈 韩 杨".split(' ')
@@ -39,20 +42,33 @@ def generate_phone():
     else:
         return generate_num(random.randint(3,4)) + '-' + generate_num(random.randint(7,8))
 
-def generate_txt(index,patientName):
+def generate_txt(index,patientName,patientID = ''):
     txt = ''
     which = ['病人描述','诊断','治疗方案','处方单内容','检查结果','检查分析']
     symptomList = "呕吐 头晕 恶心 发烧 四肢无力 食欲不振 出虚汗 腹泻 牙床出血 体重下降 面色苍白 嗓子疼 皮疹 头疼 咳嗽".split(' ')
     timeList = "昨天 最近一周 最近一个月 这几年 前天 早晨 中午 晚上 饭后 起床后".split(' ')
-    diseaseList = "糖尿病 甲状腺疾病 痛风 癫痫 阿尔兹海默症 脑梗死 先天性心脏病 心律失常 心肌炎 肺结核 肺炎 肺脓肿 哮喘 肺气肿 胃炎 胃食管反流 消化性溃疡 输尿管结石 急性膀胱炎 尿道炎".split(' ')
+    bigDiseaseList = "艾滋病 白血病 运动神经元症 严重阿尔茨海默病 重症肝炎 重型再生障碍性贫血 严重帕金森病 恶性肿瘤 脑中风 急性心肌梗塞".split(' ') 
+    smallDiseaseList = "神经衰弱 呼吸道感染 头疼 牙疼 感冒 发烧 鼻炎 轻度脑炎 肺炎 面神经麻痹".split(' ') 
+    slowDiseaseList = "椎间盘突出 关节炎 慢性肺炎 慢性咽炎 支气管哮喘 间质性肺炎 慢性心衰 慢性胃肠炎 十二指肠溃疡 冠心病 高血压 高血脂 糖尿病 尿毒症".split(' ')
     medicineList = "健胃消食片 肠炎宁 速效救心丸 藿香正气水 连花清瘟胶囊 快克 感冒冲剂 白加黑 伪麻黄碱 咖啡因 布洛芬 硫糖铝混悬液".split(' ')
     treatmentList = "预防继发感染 监测血常规 保证充分的能量摄入 呼吸支持 卧床休息 抗病毒治疗 糖皮质激素治疗".split(' ')
     if(which[index] == '病人描述'):
         for i in range(random.randint(1,6)):
             txt += '我' + timeList[random.randint(0,len(timeList) - 1)] + '感到' + symptomList[random.randint(0,len(symptomList) - 1)] + '。'
     elif(which[index] == '诊断'):
-        for i in range(random.randint(1,6)):
-            txt += patientName + '可能患有' + diseaseList[random.randint(0,len(diseaseList) - 1)] + '。'
+        if((not random.randint(0,3)) and (patientDic[patientID] == '')): #1/4有慢性，慢性只能有一个，且自动加到字典里
+            slowDisease = ''
+            slowDisease = slowDiseaseList[random.randint(0,len(slowDiseaseList) - 1)]
+            txt += patientName + '可能患有' + slowDisease + '。'
+            patientDic[patientID] = slowDisease
+        elif(patientDic[patientID] != ''):
+            txt += patientName + '可能患有' + patientDic[patientID] + '。'
+        p = random.randint(1,100) / 100
+        if(p >= 0.91):#10%重症
+            txt += patientName + '可能患有' + bigDiseaseList[random.randint(0,len(bigDiseaseList) - 1)] + '。'
+        else:
+            for i in range(random.randint(1,4)):
+                txt += patientName + '可能患有' + smallDiseaseList[random.randint(0,len(smallDiseaseList) - 1)] + '。'
     elif(which[index] == '治疗方案'):
         for i in range(random.randint(1,3)):
             txt += '进行' + treatmentList[random.randint(0,len(treatmentList) - 1)] + '。'
@@ -62,9 +78,6 @@ def generate_txt(index,patientName):
     elif(which[index] == '检查结果'):
         for i in range(random.randint(1,6)):
             txt += patientName + '有' + symptomList[random.randint(0,len(symptomList) - 1)] + '。'
-    else:
-        for i in range(random.randint(1,6)):
-            txt += patientName + '可能患有' + diseaseList[random.randint(0,len(diseaseList) - 1)] + '。'
     return txt
 
 def generate_address():
@@ -78,7 +91,7 @@ def generate_time():
     data = str(random.randint(2002,2022)) + '-' + str(random.randint(1,12)) + '-' + str(random.randint(1,28))
     time = ""
     time = str(random.randint(1,24)) + ':' + str(random.randint(0,59)) + ':' + str(random.randint(0,59))
-    return data + ' ' + time
+    return radar.random_datetime()
 
 def generate_picture(which,length):
     path = './img/' + which + '_' + str(random.randint(0,length)) + '.png'
@@ -99,7 +112,9 @@ def doctor(length):
             oneRowList.append(random.randint(0,150))
             oneRowList.append(generate_phone())
             oneRowList.append(generate_address())
-            oneRowList.append(officeList[random.randint(0,len(officeList) - 1)])
+            officeIndex = random.randint(0,len(officeList) - 1)
+            oneRowList.append(officeList[officeIndex])
+            officeNumList[officeIndex] += 1
             oneRowList.append(generate_picture('doctor',59))
             doctorList.append((oneRowList[0],oneRowList[6]))
             csvFile.writerow(oneRowList)
@@ -123,7 +138,8 @@ def patient(length):
         csvFile = csv.writer(fp)
         for i in range(length):
             oneRowList = list()
-            oneRowList.append(generate_ID('P',8))
+            patientID = generate_ID('P',8)
+            oneRowList.append(patientID)
             sex = random.randint(0,1)
             oneRowList.append(generate_name(sex))
             oneRowList.append(sexList[sex])
@@ -133,6 +149,7 @@ def patient(length):
             oneRowList.append(generate_address())
             oneRowList.append(generate_picture('patient',33))
             patientList.append((oneRowList[0],oneRowList[1]))
+            patientDic[patientID] = ''
             csvFile.writerow(oneRowList)
 
 def medical_records(length):
@@ -144,13 +161,15 @@ def medical_records(length):
             doctorIndex = random.randint(0,len(doctorList) - 1)
             patientIndex = random.randint(0,len(patientList) - 1)
             patientName = patientList[patientIndex][1]
-            oneRowList.append(patientList[patientIndex][0])
+            patientID = patientList[patientIndex][0]
+            oneRowList.append(patientID)
             oneRowList.append(doctorList[doctorIndex][0])
             oneRowList.append(generate_txt(0,patientName))
-            oneRowList.append(generate_txt(1,patientName))
+            result = generate_txt(1,patientName,patientID)
+            oneRowList.append(result)
             oneRowList.append(doctorList[doctorIndex][1])
             oneRowList.append(generate_txt(2,patientName))
-            medicalRecordsList.append((oneRowList[0],oneRowList[1],patientName))
+            medicalRecordsList.append((oneRowList[0],oneRowList[1],patientName,result))
             csvFile.writerow(oneRowList)
 
 def office():
@@ -160,7 +179,7 @@ def office():
             oneRowList = list()
             oneRowList.append(officeList[i])
             oneRowList.append(headDoctorList[i])
-            oneRowList.append(random.randint(20,100))
+            oneRowList.append(officeNumList[i])
             csvFile.writerow(oneRowList)
 
 def payment_slip(length0,length1,length2):
@@ -245,18 +264,18 @@ def inspection_item(length):
             patientID = medicalRecordsList[medicalRecordsIndex][1]
             patientName = medicalRecordsList[medicalRecordsIndex][2]
             oneRowList.append(generate_txt(4,patientName))
-            oneRowList.append(generate_txt(5,patientName))
+            oneRowList.append(medicalRecordsList[medicalRecordsIndex][3])
             oneRowList.append(generate_picture('inspection',25))
             inspectionList.append((oneRowList[3],patientID))
             csvFile.writerow(oneRowList)
 
 
 
-doctor(50)
-patient(50)
+doctor(150)
+patient(300)
 office()
-medical_records(100)
-prescription_list(100)
-registration_slip(100)
-inspection_item(100)
-payment_slip(100,100,100)
+medical_records(600)
+prescription_list(300)
+registration_slip(400)
+inspection_item(300)
+payment_slip(300,400,300)
