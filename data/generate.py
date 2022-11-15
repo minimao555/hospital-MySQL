@@ -8,11 +8,14 @@ doctorList = list() #doctorId+office
 patientList = list() #patientID+name
 patientDic = dict() #patientID:Disease
 headDoctorList = list() #id
-prescriptionList = list() #paymentID+patientID
-registrationList = list() #paymentID+patientID
-inspectionList = list() #paymentID+patientID
+prescriptionList = list() #paymentID+patientID+value
+registrationList = list() #paymentID+patientID+value
+inspectionList = list() #paymentID+patientID+value
 medicalRecordsList = list() #medicalRecordsID+patientID+name+rusult
 officeNumList = [1,1,1,1,1,1,1,1,1,1]
+prescriptionValueDic = {"健胃消食片":15, "肠炎宁":20, "速效救心丸":100, "藿香正气水":30, "连花清瘟胶囊":17, "快克":9, "感冒冲剂":25, "白加黑":24, "伪麻黄碱":40, "咖啡因":45, "布洛芬":50, "硫糖铝混悬液":36} #处方单价格
+registrationValueDic = {"专家门诊":10,"特需号":20,"会诊":300} #挂号单价格
+inspectionValueDic = {"血常规":50, "尿常规":60, "便常规":50, "肝功能":100, "肾功能":90, "血脂":70, "血糖":80, "电解质":300, "心肌酶谱":500, "甲状腺功能":150, "胸片":700, "心电图":60, "彩超":200} #检查单价格
 
 def generate_name(sex):
     lastNameList = "赵 钱 孙 李 周 吴 郑 王 贾 路 娄 危 江 童 颜 郭 冯 陈 褚 卫 蒋 沈 韩 杨".split(' ')
@@ -34,8 +37,8 @@ def generate_num(length):
 
 def generate_ID(firstChar,length):
     return firstChar + generate_num(length)
-
-def generate_phone():
+#TODO 处方单doctor换病历
+def generate_phone(): #TODO 缴费单在创建时生成，根据不同内容定价，然后加一个是否已缴费
     isPersonal = random.randint(0,1)
     if(isPersonal):
         return '1' + generate_num(10)
@@ -50,7 +53,6 @@ def generate_txt(index,patientName,patientID = ''):
     bigDiseaseList = "艾滋病 白血病 运动神经元症 严重阿尔茨海默病 重症肝炎 重型再生障碍性贫血 严重帕金森病 恶性肿瘤 脑中风 急性心肌梗塞".split(' ') 
     smallDiseaseList = "神经衰弱 呼吸道感染 头疼 牙疼 感冒 发烧 鼻炎 轻度脑炎 肺炎 面神经麻痹".split(' ') 
     slowDiseaseList = "椎间盘突出 关节炎 慢性肺炎 慢性咽炎 支气管哮喘 间质性肺炎 慢性心衰 慢性胃肠炎 十二指肠溃疡 冠心病 高血压 高血脂 糖尿病 尿毒症".split(' ')
-    medicineList = "健胃消食片 肠炎宁 速效救心丸 藿香正气水 连花清瘟胶囊 快克 感冒冲剂 白加黑 伪麻黄碱 咖啡因 布洛芬 硫糖铝混悬液".split(' ')
     treatmentList = "预防继发感染 监测血常规 保证充分的能量摄入 呼吸支持 卧床休息 抗病毒治疗 糖皮质激素治疗".split(' ')
     if(which[index] == '病人描述'):
         for i in range(random.randint(1,6)):
@@ -72,9 +74,6 @@ def generate_txt(index,patientName,patientID = ''):
     elif(which[index] == '治疗方案'):
         for i in range(random.randint(1,3)):
             txt += '进行' + treatmentList[random.randint(0,len(treatmentList) - 1)] + '。'
-    elif(which[index] == '处方单内容'):
-        for i in range(random.randint(1,6)):
-            txt += '服用' + medicineList[random.randint(0,len(medicineList) - 1)] + '。'
     elif(which[index] == '检查结果'):
         for i in range(random.randint(1,6)):
             txt += patientName + '有' + symptomList[random.randint(0,len(symptomList) - 1)] + '。'
@@ -87,10 +86,6 @@ def generate_address():
     return address
 
 def generate_time():
-    data = ""
-    data = str(random.randint(2002,2022)) + '-' + str(random.randint(1,12)) + '-' + str(random.randint(1,28))
-    time = ""
-    time = str(random.randint(1,24)) + ':' + str(random.randint(0,59)) + ':' + str(random.randint(0,59))
     return radar.random_datetime()
 
 def generate_picture(which,length):
@@ -109,7 +104,7 @@ def doctor(length):
             sex = random.randint(0,1)
             oneRowList.append(generate_name(sex))
             oneRowList.append(sexList[sex])
-            oneRowList.append(random.randint(0,150))
+            oneRowList.append(random.randint(22,65))
             oneRowList.append(generate_phone())
             oneRowList.append(generate_address())
             officeIndex = random.randint(0,len(officeList) - 1)
@@ -124,7 +119,7 @@ def doctor(length):
             sex = random.randint(0,1)
             oneRowList.append(generate_name(sex))
             oneRowList.append(sexList[sex])
-            oneRowList.append(random.randint(0,150))
+            oneRowList.append(random.randint(35,60))
             oneRowList.append(generate_phone())
             oneRowList.append(generate_address())
             oneRowList.append(officeList[i])
@@ -192,8 +187,14 @@ def payment_slip(length0,length1,length2):
             oneRowList.append(prescriptionList[prescriptionIndex][0])
             oneRowList.append(prescriptionList[prescriptionIndex][1])
             oneRowList.append(item[0])
-            oneRowList.append(random.uniform(0,10000))
-            oneRowList.append(generate_time())
+            oneRowList.append(prescriptionList[prescriptionIndex][2])
+            haspay = random.randint(0,1)
+            if(haspay):
+                oneRowList.append(generate_time())
+                oneRowList.append("是")
+            else:
+                oneRowList.append('')
+                oneRowList.append("否")
             csvFile.writerow(oneRowList)
         for i in range(length1):
             oneRowList = list()
@@ -201,8 +202,14 @@ def payment_slip(length0,length1,length2):
             oneRowList.append(registrationList[registrationIndex][0])
             oneRowList.append(registrationList[registrationIndex][1])
             oneRowList.append(item[1])
-            oneRowList.append(random.uniform(0,10000))
-            oneRowList.append(generate_time())
+            oneRowList.append(registrationList[registrationIndex][2])
+            haspay = random.randint(0,1)
+            if(haspay):
+                oneRowList.append(generate_time())
+                oneRowList.append("是")
+            else:
+                oneRowList.append('')
+                oneRowList.append("否")
             csvFile.writerow(oneRowList)
         for i in range(length2):
             oneRowList = list()
@@ -210,8 +217,14 @@ def payment_slip(length0,length1,length2):
             oneRowList.append(inspectionList[inspectionIndex][0])
             oneRowList.append(inspectionList[inspectionIndex][1])
             oneRowList.append(item[2])
-            oneRowList.append(random.uniform(0,10000))
-            oneRowList.append(generate_time())
+            oneRowList.append(inspectionList[inspectionIndex][2])
+            haspay = random.randint(0,1)
+            if(haspay):
+                oneRowList.append(generate_time())
+                oneRowList.append("是")
+            else:
+                oneRowList.append('')
+                oneRowList.append("否")
             csvFile.writerow(oneRowList)
             
             
@@ -219,17 +232,26 @@ def payment_slip(length0,length1,length2):
 def prescription_list(length):
     with open('prescriptionList.csv','w',encoding='utf-8',newline= '') as fp:
         csvFile = csv.writer(fp)
+        medicineList = "健胃消食片 肠炎宁 速效救心丸 藿香正气水 连花清瘟胶囊 快克 感冒冲剂 白加黑 伪麻黄碱 咖啡因 布洛芬 硫糖铝混悬液".split(' ')
+        medicineNumList = "一盒 两盒 三盒 四盒".split(' ')
         for i in range(length):
             oneRowList = list()
             oneRowList.append(generate_ID('PL',8))
-            doctorIndex = random.randint(0,len(doctorList) - 1)
+            medicalRecordIndex = random.randint(0,len(doctorList) - 1)
             patientIndex = random.randint(0,len(patientList) - 1)
             patientName = patientList[patientIndex][1]
             oneRowList.append(patientList[patientIndex][0])
-            oneRowList.append(doctorList[doctorIndex][0])
+            oneRowList.append(medicalRecordsList[medicalRecordIndex][0])
             oneRowList.append(generate_ID('PS',8))
-            oneRowList.append(generate_txt(3,patientName))
-            prescriptionList.append((oneRowList[3],oneRowList[1]))
+            txt = ''
+            tempValue = 0
+            for i in range(random.randint(1,6)):
+                medicineNum = random.randint(0,3)
+                medicineName = medicineList[random.randint(0,len(medicineList) - 1)]
+                txt += '服用' + medicineName + medicineNumList[medicineNum] +'。'
+                tempValue += prescriptionValueDic[medicineName] * medicineNum
+            oneRowList.append(txt)
+            prescriptionList.append((oneRowList[3],oneRowList[1],tempValue))
             csvFile.writerow(oneRowList)
 
 def registration_slip(length):
@@ -246,8 +268,9 @@ def registration_slip(length):
             oneRowList.append(doctorList[doctorIndex][1])
             oneRowList.append(generate_ID('PS',8))
             oneRowList.append(generate_time())
-            oneRowList.append(type[random.randint(0,2)])
-            registrationList.append((oneRowList[4],oneRowList[1]))
+            typeName = type[random.randint(0,2)]
+            oneRowList.append(typeName)
+            registrationList.append((oneRowList[4],oneRowList[1],registrationValueDic[typeName]))
             csvFile.writerow(oneRowList)
 
 def inspection_item(length):
@@ -257,7 +280,8 @@ def inspection_item(length):
         for i in range(length):
             oneRowList = list()
             oneRowList.append(generate_ID('II',8))
-            oneRowList.append(inspectionName[random.randint(0,len(inspectionName) - 1)])
+            whichInspection = inspectionName[random.randint(0,len(inspectionName) - 1)]
+            oneRowList.append(whichInspection)
             medicalRecordsIndex = random.randint(0,len(medicalRecordsList) - 1)
             oneRowList.append(medicalRecordsList[medicalRecordsIndex][0])
             oneRowList.append(generate_ID('PS',8))
@@ -266,7 +290,7 @@ def inspection_item(length):
             oneRowList.append(generate_txt(4,patientName))
             oneRowList.append(medicalRecordsList[medicalRecordsIndex][3])
             oneRowList.append(generate_picture('inspection',25))
-            inspectionList.append((oneRowList[3],patientID))
+            inspectionList.append((oneRowList[3],patientID,inspectionValueDic[whichInspection]))
             csvFile.writerow(oneRowList)
 
 
