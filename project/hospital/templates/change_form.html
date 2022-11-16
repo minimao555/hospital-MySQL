@@ -1,0 +1,31 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div id="content-main">
+
+  <form method="post" id="{{ name }}_form" novalidate>
+    <div>
+      {% include "fieldset.html" %}
+
+      {% block after_field_sets %}{% endblock %}
+
+      {% block inline_field_sets %}
+      {% for inline_admin_formset in inline_admin_formsets %}
+          {% include inline_admin_formset.opts.template %}
+      {% endfor %}
+      {% endblock %}
+
+      <div class="submit-row">
+        <input type="submit" value="保存" class="default" name="_save">
+        <p class="deletelink-box"><a href="{{ path }}/{{ name }}/{{ item }}/delete/" class="deletelink">删除</a></p>
+        <input type="submit" value="保存并增加另一个" name="_addanother">
+        <input type="submit" value="保存并继续编辑" name="_continue">
+      </div>
+      
+      <script id="django-admin-form-add-constants" src="/static/js/change_form.js" async=""></script>
+      <script id="django-admin-prepopulated-fields-constants" src="/static/js/prepopulate_init.js" data-prepopulated-fields="[]"></script>
+
+    </div>
+  </form>
+</div>
+{% endblock %}
