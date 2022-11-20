@@ -76,7 +76,8 @@ class PaymentSlip(models.Model):
     patient_id = models.ForeignKey(Patient, models.CASCADE, db_column='patientID')
     payment_items = models.CharField(db_column='paymentItems', max_length=2)
     amount = models.FloatField()
-    time = models.DateTimeField()
+    time = models.DateTimeField(blank=True, null=True)
+    has_pay = models.CharField(max_length=1)
 
     class Meta:
         db_table = 'payment_slip'
@@ -85,7 +86,7 @@ class PaymentSlip(models.Model):
 class PrescriptionList(models.Model):
     prescription_id = models.CharField(db_column='prescriptionID', primary_key=True, max_length=10)
     patient_id = models.ForeignKey(Patient, models.CASCADE, db_column='patientID')
-    doctor_id = models.ForeignKey(Doctor, models.CASCADE, db_column='doctorID')
+    medical_records_id = models.ForeignKey(MedicalRecord, models.CASCADE, db_column='medicalRecordsID')
     payment_id = models.ForeignKey(PaymentSlip, models.CASCADE, db_column='paymentID')
     content = models.TextField()
 
