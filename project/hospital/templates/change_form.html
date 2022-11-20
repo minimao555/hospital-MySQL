@@ -3,7 +3,7 @@
 {% block content %}
 <div id="content-main">
 
-  <form method="post" id="{{ name }}_form" novalidate>
+  <form method="post" id="{{ name }}_form" action="" novalidate>
     <div>
       {% include "fieldset.html" %}
 
@@ -16,10 +16,14 @@
       {% endblock %}
 
       <div class="submit-row">
-        <input type="submit" value="保存" class="default" name="_save">
         <p class="deletelink-box"><a href="{{ path }}/{{ name }}/{{ item }}/delete/" class="deletelink">删除</a></p>
+        {% comment %} 由于action为空，点击这些按钮后往当前地址post，其中包含键值对"name: value"，如_save: 保存，通过判断这个值来重定向到不同页面 {% endcomment %}
+        <input type="submit" value="保存" class="default" name="_save">
         <input type="submit" value="保存并增加另一个" name="_addanother">
         <input type="submit" value="保存并继续编辑" name="_continue">
+        {% for button in buttons %}
+          <input type="submit" value="{{ button.value }}" name="{{ button.name }}">
+        {% endfor %}
       </div>
       
       <script id="django-admin-form-add-constants" src="/static/js/change_form.js" async=""></script>

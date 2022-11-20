@@ -3,12 +3,18 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import auth, messages
 from django.http import HttpResponse
 import base64
+from jinja2 import Environment, FileSystemLoader
+from pyecharts.globals import CurrentConfig
+from pyecharts import options as opts
+from pyecharts.charts import Bar, Pie
+from pyecharts.faker import Faker
+import json
 
 # Create your views here.
 def gen_content():
     content = {
         'title': 'Hospital Admin System',
-        'path': '/hospital',
+        'path': '/hospital/data',
         # 有哪些表
         'models': [
             {
@@ -117,6 +123,16 @@ def form(request):
                 "rows": 30
             },
         ]
+        content["buttons"] = [
+            {
+                "value": "hhh",
+                "name": "aaa",
+            },
+            {
+                "value": "hhhh",
+                "name": "aaaa",
+            },
+        ]
         # print(content)
         return render(request, r'change_form.html', context=content)
     elif request.method == 'POST':
@@ -178,6 +194,47 @@ def deleteform(request):
     path_list = request.path.split("/")
     # 重定向到二级目录
     return redirect("/".join(path_list[:-2] if path_list[-1] else path_list[:-3]))
+
+def graph(request):
+    content = gen_content()
+
+    content['graph'] = [
+        'Pie',
+        'Pie1',
+        'Pie2',
+        'Pie3',
+        'Bar'
+    ]
+
+    return render(request, r'change_list.html', context=content)
+
+
+def response_as_json(data):
+    json_str = json.dumps(data)
+    response = HttpResponse(
+        json_str,
+        content_type="application/json",
+    )
+    response["Access-Control-Allow-Origin"] = "*"
+    return response
+def json_response(data, code=200):
+    data = {
+        "code": code,
+        "msg": "success",
+        "data": data,
+    }
+    return response_as_json(data)
+
+def render_graph(request):
+    c = (
+        Pie()
+            .add("", [list(z) for z in zip(Faker.choose(), Faker.values())])
+            .set_colors(["blue", "green", "yellow", "red", "pink", "orange", "purple"])
+            .set_global_opts(title_opts=opts.TitleOpts(title="Pie-示例"))
+            .set_series_opts(label_opts=opts.LabelOpts(formatter="{b}: {c}"))
+            .dump_options_with_quotes()
+    )
+    return json_response(json.loads(c))
 
 def ico(request):
     return HttpResponse(open(r'hospital\templates\ico\logo.png', 'rb').read(), content_type='image/jpg')

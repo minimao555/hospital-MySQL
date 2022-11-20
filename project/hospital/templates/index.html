@@ -62,17 +62,43 @@
                 </div>
             </nav>
             {% if results or fieldset %}
-            <div id="content-start" class="content" tabindex="-1">
-                <div id="content" class="{% block coltype %}colM{% endblock %}">
-                    {% if name %}<h1>{{ name }}</h1>{% endif %}
-                    {% if sub_name %}<h2>{{ sub_name }}</h2>{% endif %}
-                    {% block content %}
-                        {% block object-tools %}{% endblock %}
-                        {{ content }}
-                    {% endblock %}
-                    {% block sidebar %}{% endblock %}
-                    <br class="clear">
+                <div id="content-start" class="content" tabindex="-1">
+                    <div id="content" class="{% block coltype %}colM{% endblock %}">
+                        {% if name %}<h1>{{ name }}</h1>{% endif %}
+                        {% if sub_name %}<h2>{{ sub_name }}</h2>{% endif %}
+                        {% block content %}
+                            {% block object-tools %}{% endblock %}
+                            {{ content }}
+                        {% endblock %}
+                        {% block sidebar %}{% endblock %}
+                        <br class="clear">
+                    </div>
                 </div>
+            {% elif graph %}
+            <div style="display: block; margin:100px;" >
+                {% for g in graph %}
+                    <div id="{{ g }}" style="width:700px; height:700px; " align="center" ></div>
+                {% endfor %}
+                <script>
+                    function fetchData(chart, name) {
+                        $.ajax({
+                            type: "POST",
+                            url: "http://127.0.0.1:8000/graph/",
+                            dataType: 'json',
+                            data: {name},
+                            success: function (result) {
+                                chart.setOption(result.data);
+                            }
+                        });
+                    }
+                {% for g in graph %}
+                    $(
+                        function () {
+                            fetchData(echarts.init(document.getElementById('{{ g }}'), 'white', {renderer: 'canvas'}), "{{ g }}");
+                        }
+                    );
+                {% endfor %}
+                </script>
             </div>
             {% endif %}
         </div>

@@ -1,3 +1,4 @@
 Django~=4.1.3
 PyMySQL~=1.0.2
 django-simpleui~=2022.7.29
+pyecharts~=1.9.1
