@@ -2,26 +2,20 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth, messages
 from django.http import HttpResponse
+from django.apps import apps
+from django.db import models
 import base64
+
 
 # Create your views here.
 def gen_content():
-    content = {
-        'title': 'Hospital Admin System',
-        'path': '/hospital',
-        # 有哪些表
-        'models': [
-            {
-                'name': 'test_model1',
-            },
-            {
-                'name': 'test_model2',
-            }
-        ],
-        'has_add_permission': True,
-        # 选中的表中有哪些行
-        'results': []
-    }
+    content = {'title': 'Hospital Admin System',
+               'path': '/hospital',
+               'has_add_permission': True,
+               'results': [],
+               'models': [{"name": x._meta.verbose_name}
+                          for x in apps.get_app_config("hospital").get_models()],
+               }
     return content
 
 
@@ -42,6 +36,7 @@ def index(request):
                 content[k] = v
             break
     # print(content)
+
     return render(request, r'change_list.html', context=content)
 
 
