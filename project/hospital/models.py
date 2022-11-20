@@ -77,7 +77,7 @@ class PaymentSlip(models.Model):
     payment_items = models.CharField(db_column='paymentItems', max_length=2)
     amount = models.FloatField()
     time = models.DateTimeField(blank=True, null=True)
-    has_pay = models.CharField(max_length=1)
+    has_pay = models.CharField(max_length=1, db_column="haspay")
 
     class Meta:
         db_table = 'payment_slip'

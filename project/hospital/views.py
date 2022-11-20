@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import auth, messages
 from django.http import HttpResponse
 import base64
 
 # Create your views here.
-
 def gen_content():
     content = {
         'title': 'Hospital Admin System',
@@ -23,6 +24,8 @@ def gen_content():
     }
     return content
 
+
+@login_required(redirect_field_name='next', login_url='/login/')
 def index(request):
     content = gen_content()
     path_list = request.path.split('/')
@@ -40,6 +43,32 @@ def index(request):
             break
     # print(content)
     return render(request, r'change_list.html', context=content)
+
+
+def login(request):
+    context_general = {
+        'site_title': "医院数字化管理系统",
+        'site_header': "医院数字化管理系统",
+    }
+    if request.method == 'GET':
+        return render(request, r'login.html', context=context_general)
+    else:
+        username = request.POST['username']
+        passwd = request.POST['password']
+        user = auth.authenticate(username=username, password=passwd)
+        if user:
+            auth.login(request, user)
+            redirect_to = request.GET.get('next', '/')
+            return redirect(redirect_to)
+        else:
+            messages.error(request, "用户名或密码错误，登录失败")
+            return redirect(r'/login.html', context={"next": request.POST['next']})
+
+
+def logout(request):
+    auth.logout(request)
+    return redirect(r'/index.html')
+
 
 def form(request):
     if request.method == 'GET':
@@ -93,6 +122,8 @@ def form(request):
     elif request.method == 'POST':
         print(request.body)
         return redirect(request.path)
+
+
 def addform(request):
     content = gen_content()
     path_list = request.path.split('/')
@@ -140,6 +171,7 @@ def addform(request):
     ]
     # print(content)
     return render(request, r'change_form.html', context=content)
+
 
 def deleteform(request):
     print(request.path)
