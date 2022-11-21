@@ -1,43 +1,15 @@
 from __future__ import annotations
 
-import django.apps
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth, messages
 from django.http import HttpResponse
-from django.apps import apps
-from django.db import models
 import base64
 from pyecharts import options as opts
 from pyecharts.charts import Bar, Pie
 from pyecharts.faker import Faker
 import json
-
-
-class ViewBackend:
-    app: django.apps.AppConfig = apps.get_app_config("hospital")
-
-    @classmethod
-    def gen_content(cls) -> dict[str, str | list | list[dict]]:
-        content = {'title': 'Hospital Admin System',
-                   'path': '/hospital/data',
-                   'has_add_permission': True,
-                   'results': [],
-                   'models': [{"name": x._meta.verbose_name,
-                               "link": x._meta.model_name}
-                              for x in cls.app.get_models()],
-                   }
-        return content
-
-    @classmethod
-    def get_result(cls, user, content: dict[str, str], model_name: str, value: str, key: str = ""):
-        # TODO: add user authentication
-        model = cls.app.get_model(model_name)
-        # if key == "":   # default search method
-        # TODO: default query by id (general method)
-
-        # else:
-        # TODO: advanced query
+from .backend import ViewBackend
 
 
 # Create your views here.
@@ -46,20 +18,16 @@ def index(request):
     content = ViewBackend.gen_content()
     path_list = request.path.strip('/').split('/')
     model_name = path_list[-1]
-    ViewBackend.get_result(auth.get_user(request), content, model_name, "test")
+    search_value = request.GET.get("search")
+    # TODO: user content filter
+    search_results = ViewBackend.get_result(auth.get_user(request), content, model_name, search_value)
+    content['results'] = ViewBackend.display_results(search_results)
     for m in content['models']:
         if m['name'] == model_name:
-            content['results'] = [
-                {'value': '123'},
-                {'value': 'qwe'},
-                {'value': 'asd'}
-            ]
             for k, v in m.items():
                 # 将选中的表的name等信息放到content直接索引中
                 content[k] = v
             break
-    # print(content)
-
     return render(request, r'change_list.html', context=content)
 
 

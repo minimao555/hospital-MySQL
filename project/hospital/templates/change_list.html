@@ -42,8 +42,8 @@
               <tbody>
                 {% for result in results %}
                   <tr>
-                    <td class="action-checkbox"><input type="checkbox" name="_selected_action" value="{{ result.value }}" class="action-select"></td>
-                    <th class="field-__str__"><a href="{{ path }}/{{ name }}/{{ result.value }}/change/">{{ result.value }}</a></th>
+                    <td class="action-checkbox"><input type="checkbox" name="_selected_action" value="{{ result }}" class="action-select"></td>
+                    <th class="field-__str__"><a href="{{ path }}/{{ name }}/{{ result }}/change/">{{ result }}</a></th>
                   </tr>
                 {% endfor %}
               </tbody>
