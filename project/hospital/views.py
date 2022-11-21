@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth, messages
@@ -15,13 +13,12 @@ from .backend import ViewBackend
 # Create your views here.
 @login_required(redirect_field_name='next', login_url='/login/')
 def index(request):
-    content = ViewBackend.gen_content()
+    content = ViewBackend.genContent()
     path_list = request.path.strip('/').split('/')
     model_name = path_list[-1]
     search_value = request.GET.get("search")
-    # TODO: user content filter
-    search_results = ViewBackend.get_result(auth.get_user(request), content, model_name, search_value)
-    content['results'] = ViewBackend.display_results(search_results)
+    search_results = ViewBackend.getResult(auth.get_user(request), model_name, search_value)
+    content['results'] = ViewBackend.extractResults(search_results)
     for m in content['models']:
         if m['name'] == model_name:
             for k, v in m.items():
@@ -58,18 +55,14 @@ def logout(request):
 
 def form(request):
     if request.method == 'GET':
-        content = ViewBackend.gen_content()
-        path_list = request.path.split('/')
+        content = ViewBackend.genContent()
+        path_list = request.path.strip('/').split('/')
         if len(path_list) < 2:
             raise "Path error: " + request.path
-        item = path_list[-2] if path_list[-1] else path_list[-3]
-        model = path_list[-3] if path_list[-1] else path_list[-4]
-        for m in content['models']:
-            if m['name'] == model:
-                for k, v in m.items():
-                    # 将选中的表的name等信息放到content直接索引中
-                    content[k] = v
-                break
+        item = path_list[-2]
+        model_name = path_list[-3]
+        ViewBackend.fillModelContent(content, model_name)
+
         content['item'] = item
         content['fieldset'] = [
             {
@@ -121,7 +114,7 @@ def form(request):
 
 
 def addform(request):
-    content = ViewBackend.gen_content()
+    content = ViewBackend.genContent()
     path_list = request.path.split('/')
     if len(path_list) < 2:
         raise "Path error: " + request.path
@@ -177,7 +170,7 @@ def deleteform(request):
 
 
 def graph(request):
-    content = ViewBackend.gen_content()
+    content = ViewBackend.genContent()
 
     content['graph'] = [
         'Pie',
