@@ -9,14 +9,26 @@ class ViewBackend:
     app: apps.AppConfig = apps.get_app_config("hospital")
 
     @staticmethod
-    def display_results(model_results: models.query.RawQuerySet) -> list:
+    def extractResults(model_results: models.query.RawQuerySet) -> list[dict]:
         if model_results.model in {my_models.Doctor, my_models.Patient}:
-            return ["{} {}".format(result.name, result.pk) for result in model_results]
+            return [{"value": "{} {}".format(result.name, result.pk),
+                     "link": result.pk} for result in model_results]
         else:
-            return [result.pk for result in model_results]
+            return [{"value": result.pk,
+                     "link": result.pk} for result in model_results]
+
+    @staticmethod
+    def fillModelContent(content: dict, model_name: str):
+        for m in content['models']:
+            if m['name'] == model_name:
+                for k, v in m.items():
+                    # 将选中的表的name等信息放到content直接索引中
+                    content[k] = v
+                break
 
     @classmethod
-    def gen_content(cls) -> dict[str, str | list | list[dict]]:
+    def genContent(cls) -> dict[str, str | list | list[dict]]:
+        x: models.Model
         content = {'title': 'Hospital Admin System',
                    'path': '/hospital/data',
                    'has_add_permission': True,
@@ -28,7 +40,8 @@ class ViewBackend:
         return content
 
     @classmethod
-    def get_result(cls, user, content: dict[str, str], model_name: str, value: str | None = None, key: str | None = None):
+    def getResult(cls, user, model_name: str, value: str | None = None, key: str | None = None)\
+            -> models.query.RawQuerySet:
         # TODO: add user authentication
         model: models.Model = cls.app.get_model(model_name)
         if value is None:
