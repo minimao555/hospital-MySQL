@@ -13,11 +13,14 @@ from .backend import ViewBackend
 # Create your views here.
 @login_required(redirect_field_name='next', login_url='/login/')
 def index(request):
-    content = ViewBackend.genContent()
+    content = ViewBackend.genContent(request)
     path_list = request.path.strip('/').split('/')
     model_name = path_list[-1]
+    if (model := ViewBackend.get_model(model_name)) is None:
+        messages.error(request, "找不到指定的项目")
+        return redirect('/')
     search_value = request.GET.get("search")
-    search_results = ViewBackend.getResult(auth.get_user(request), model_name, search_value)
+    search_results = ViewBackend.getResult(auth.get_user(request), model, search_value)
     content['results'] = ViewBackend.extractResults(search_results)
     for m in content['models']:
         if m['name'].replace(' ', '') == model_name:
@@ -50,22 +53,26 @@ def login(request):
 
 def logout(request):
     auth.logout(request)
-    return redirect(r'/hospital/login/')
+    return redirect("/")
 
 
 def form(request):
     if request.method == 'GET':
-        content = ViewBackend.genContent()
+        content = ViewBackend.genContent(request)
         path_list = request.path.strip('/').split('/')
         if len(path_list) < 2:
             raise "Path error: " + request.path
         mode = path_list[-1]
         item = path_list[-2]
         model_name = path_list[-3]
+        if (model := ViewBackend.get_model(model_name)) is None:
+            messages.error(request, "找不到指定的项目")
+            return redirect("/")
         ViewBackend.fillModelProperties(content, model_name)
         # TODO: generate model fields (in backend.py)
 
         content['item'] = item
+        content['fieldset'] = ViewBackend.genFieldSet(model, item)
         content['fieldset'] = [
             {
                 "required": True,
@@ -116,7 +123,7 @@ def form(request):
 
 
 def addform(request):
-    content = ViewBackend.genContent()
+    content = ViewBackend.genContent(request)
     path_list = request.path.split('/')
     if len(path_list) < 2:
         raise "Path error: " + request.path
@@ -173,7 +180,7 @@ def deleteform(request):
 
 
 def graph(request):
-    content = ViewBackend.genContent()
+    content = ViewBackend.genContent(request)
 
     content['graph'] = [
         'Pie',
@@ -215,7 +222,6 @@ def render_graph(request):
         .dump_options_with_quotes()
     )
     return json_response(json.loads(c))
-
 
 def ico(request):
     return HttpResponse(open(r'hospital\templates\ico\logo.png', 'rb').read(), content_type='image/jpg')

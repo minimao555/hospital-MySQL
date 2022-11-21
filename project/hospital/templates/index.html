@@ -12,10 +12,6 @@
     <link rel="stylesheet" href="/static/css/dark_mode.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
     <link rel="stylesheet" href="/static/css/forms.css">
-    <link rel="stylesheet" type="text/css" href="/static/admin/simpleui-x/elementui/theme-chalk/index.css">
-    <link rel="stylesheet" type="text/css" href="/static/admin/simpleui-x/fontawesome-free-5.8.1-web/css/all.min.css">
-    <link rel="stylesheet" href="/static/admin/simpleui-x/waves/waves.min.css?_=2.1">
-    <link rel="stylesheet" href="/static/admin/simpleui-x/waves/waves.min.css?_=2.1">
     <script src="/static/js/nav_sidebar.js" defer=""></script>
     <script src="/static/js/vendor/jquery/jquery.js"></script>
     <script src="/static/js/jquery.init.js"></script>
@@ -30,76 +26,6 @@
     
 
 <body>
-    <style type="text/css">
-        .el-tabs__nav .el-tabs__item:nth-child(1) .el-icon-close {
-            display: none;
-        }
-    
-        * {
-            -webkit-overflow-scrolling: touch;
-        }
-    
-        [v-block] {
-            display: none;
-        }
-    </style>
-    <script type="text/javascript">
-        
-            var home = {
-                id: '0',
-                index: '1',
-                eid: '1',
-                name: "首页",
-                icon: 'fas fa-home'
-            };
-        
-        menus.unshift(home);
-        window.language = {
-            change_password: '修改密码',
-            logout: '注销',
-            yes: '是',
-            no: '否',
-            confirm: '你确定吗？'
-        }
-        window.themeUrl = '/static/admin/simpleui-x/theme/';
-        window.urls = {
-            changePassword: "/admin/password_change/",
-            logout: "/admin/logout/"
-        }
-        var lanuageCode = 'zh-hans';
-
-        function localeError(e) {
-            console.warn("Please add the zh-hans.js language file to the '/simpleui-x/theme' directory.")
-            console.log("See simpleui i18n:https://github.com/newpanjing/simpleui/blob/master/i18n.md")
-            console.log("或者加入QQ群:786576510 (Join QQ Group.)")
-
-        }
-    </script>
-        
-            
-    <script type="text/javascript" src="/static/admin/simpleui-x/js/vue.min.js?_=2022.7.29"></script>
-    <script type="text/javascript" src="/static/admin/simpleui-x/elementui/index.js?_=2022.7.29"></script>
-    <script type="text/javascript">
-        __simpleui_version = '2022.7.29';
-    </script>
-    <script type="text/javascript" src="/static/admin/simpleui-x/automatic/dicts.js?_=2022.7.29"></script>
-    <script type="text/javascript" src="/static/admin/simpleui-x/automatic/segment.js?_=2022.7.29"></script>
-    <script type="text/javascript" src="/static/admin/simpleui-x/locale/en-us.js?_=2022.7.29"></script>
-    <script type="text/javascript" src="/static/admin/simpleui-x/locale/zh-hans.js?_=2022.7.29" onerror="localeError()"></script>
-    <script type="text/javascript" src="/static/admin/simpleui-x/js/cookie.js?_=2022.7.29"></script>
-    <script type="text/javascript" src="/static/admin/simpleui-x/theme/theme.js?_=2022.7.29"></script>
-    <script type="text/javascript" src="/static/admin/simpleui-x/waves/waves.min.js?_=2022.7.29"></script>
-    <script type="text/javascript" src="/static/admin/simpleui-x/js/menu.js?_=2022.7.29"></script>
-    <script type="text/javascript" src="/static/admin/simpleui-x/js/index.js?_=2022.7.29"></script>
-    <script type="text/javascript">
-        function logout() {
-            $.ajax({
-            type: "GET",
-            url: "http://127.0.0.1:8000{{ app }}/logout/"
-        });
-        }
-    </script>
-
     <div id="container">
         <div id="header">
             <div>
@@ -108,14 +34,12 @@
             <div id="branding">
                 <h1 id="site-name"><a href="{{ app }}">{{ title }}</a></h1>
             </div>
-            <div class="el-button" onclick="logout()">
-                {% comment %} <button type="button" class="el-button el-button--default waves-effect el-dropdown-selfdefine   " aria-haspopup="list" aria-controls="dropdown-menu-5872" role="button" tabindex="0"> {% endcomment %}
-                        <span>
-                            <i class="fas fa-user"></i>
-                            注销
-                            <i class="el-icon-close"></i>
-                        </span>
-                {% comment %} </button> {% endcomment %}
+            <div id="logout">
+                <h2 id="logout-a"
+                    {% if not username %}
+                        style="visibility: hidden"
+                    {% endif %}
+                ><a href="{{ app }}/logout">{{ username }} (Logout)</a></h2>
             </div>
         </div>
         <div class="main shifted" id="main">
@@ -133,12 +57,12 @@
                         <!-- 一级目录的每一项 -->
                             <tr class="model-{{ model.name|lower }}{% if model.name in request.path|urlencode %} current-model{% endif %}">
                                 {% if model.name %}
-                                    <th scope="row"><a href="{{ app }}{{ path }}/{{ model.link }}"{% if model.name in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a></th>
+                                    <th scope="row"><a href="{{ path }}/{{ model.link }}"{% if model.name in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a></th>
                                 {% else %}
                                     <th scope="row">{{ model.name }}</th>
                                 {% endif %}
                                 <!-- 录入信息的按钮 -->
-                                <td><a href="{{ app }}{{ path }}/{{ model.link }}/add" class="addlink">增加</a></td>
+                                <td><a href="{{ path }}/{{ model.link }}/add" class="addlink">增加</a></td>
                             </tr>
                         {% endfor %}
                     </table>
@@ -188,4 +112,11 @@
     </div>
 </body>
 
+{% if messages %}
+    <script>
+        {% for msg in messages %}
+            alert('{{ msg.message }}');
+        {% endfor %}
+    </script>
+{% endif %}
 </html>
