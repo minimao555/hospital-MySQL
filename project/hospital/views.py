@@ -2,49 +2,29 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth, messages
 from django.http import HttpResponse
-from django.apps import apps
-from django.db import models
 import base64
-from jinja2 import Environment, FileSystemLoader
-from pyecharts.globals import CurrentConfig
 from pyecharts import options as opts
 from pyecharts.charts import Bar, Pie
 from pyecharts.faker import Faker
 import json
+from .backend import ViewBackend
 
 
 # Create your views here.
-def gen_content():
-    content = {
-        'title': 'Hospital Admin System',
-        'app': '/hospital',
-        'path': '/data',
-        'has_add_permission': True,
-        'results': [],
-        'models': [{"name": x._meta.verbose_name}
-                    for x in apps.get_app_config("hospital").get_models()],
-    }
-    return content
-
-
 @login_required(redirect_field_name='next', login_url='/login/')
 def index(request):
-    content = gen_content()
-    path_list = request.path.split('/')
-    model = path_list[-1] if path_list[-1] else path_list[-2] # 路径最后可能是/
+    content = ViewBackend.genContent()
+    path_list = request.path.strip('/').split('/')
+    model_name = path_list[-1]
+    search_value = request.GET.get("search")
+    search_results = ViewBackend.getResult(auth.get_user(request), model_name, search_value)
+    content['results'] = ViewBackend.extractResults(search_results)
     for m in content['models']:
-        if m['name'] == model:
-            content['results'] = [
-                {'value': '123'},
-                {'value': 'qwe'},
-                {'value': 'asd'}
-            ]
+        if m['name'].replace(' ', '') == model_name:
             for k, v in m.items():
                 # 将选中的表的name等信息放到content直接索引中
                 content[k] = v
             break
-    # print(content)
-
     return render(request, r'change_list.html', context=content)
 
 
@@ -75,18 +55,14 @@ def logout(request):
 
 def form(request):
     if request.method == 'GET':
-        content = gen_content()
-        path_list = request.path.split('/')
+        content = ViewBackend.genContent()
+        path_list = request.path.strip('/').split('/')
         if len(path_list) < 2:
             raise "Path error: " + request.path
-        item = path_list[-2] if path_list[-1] else path_list[-3]
-        model = path_list[-3] if path_list[-1] else path_list[-4]
-        for m in content['models']:
-            if m['name'] == model:
-                for k, v in m.items():
-                    # 将选中的表的name等信息放到content直接索引中
-                    content[k] = v
-                break
+        item = path_list[-2]
+        model_name = path_list[-3]
+        ViewBackend.fillModelContent(content, model_name)
+
         content['item'] = item
         content['fieldset'] = [
             {
@@ -138,11 +114,11 @@ def form(request):
 
 
 def addform(request):
-    content = gen_content()
+    content = ViewBackend.genContent()
     path_list = request.path.split('/')
     if len(path_list) < 2:
         raise "Path error: " + request.path
-    item = path_list[-1] if path_list[-1] else path_list[-2]
+    # item = path_list[-1] if path_list[-1] else path_list[-2]
     model = path_list[-2] if path_list[-1] else path_list[-3]
     for m in content['models']:
         if m['name'] == model:
@@ -192,8 +168,9 @@ def deleteform(request):
     # 重定向到二级目录
     return redirect("/".join(path_list[:-2] if path_list[-1] else path_list[:-3]))
 
+
 def graph(request):
-    content = gen_content()
+    content = ViewBackend.genContent()
 
     content['graph'] = [
         'Pie',
@@ -214,6 +191,8 @@ def response_as_json(data):
     )
     response["Access-Control-Allow-Origin"] = "*"
     return response
+
+
 def json_response(data, code=200):
     data = {
         "code": code,
@@ -222,16 +201,18 @@ def json_response(data, code=200):
     }
     return response_as_json(data)
 
+
 def render_graph(request):
     c = (
         Pie()
-            .add("", [list(z) for z in zip(Faker.choose(), Faker.values())])
-            .set_colors(["blue", "green", "yellow", "red", "pink", "orange", "purple"])
-            .set_global_opts(title_opts=opts.TitleOpts(title="Pie-示例"))
-            .set_series_opts(label_opts=opts.LabelOpts(formatter="{b}: {c}"))
-            .dump_options_with_quotes()
+        .add("", [list(z) for z in zip(Faker.choose(), Faker.values())])
+        .set_colors(["blue", "green", "yellow", "red", "pink", "orange", "purple"])
+        .set_global_opts(title_opts=opts.TitleOpts(title="Pie-示例"))
+        .set_series_opts(label_opts=opts.LabelOpts(formatter="{b}: {c}"))
+        .dump_options_with_quotes()
     )
     return json_response(json.loads(c))
+
 
 def ico(request):
     return HttpResponse(open(r'hospital\templates\ico\logo.png', 'rb').read(), content_type='image/jpg')

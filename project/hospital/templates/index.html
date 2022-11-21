@@ -127,37 +127,24 @@
                 <div class="app-hospital module current-app">
                     <table>
                         <caption>
-                            <a href="{{ app }}" class="section" title="在应用程序 Hospital 中的模型" tabindex="0">Hospital</a>
+                            <a href="/" class="section" title="在应用程序 Hospital 中的模型" tabindex="0">Hospital</a>
                         </caption>
                         {% for model in models %}
                         <!-- 一级目录的每一项 -->
                             <tr class="model-{{ model.name|lower }}{% if model.name in request.path|urlencode %} current-model{% endif %}">
                                 {% if model.name %}
-                                    <th scope="row"><a href="{{ app }}{{ path }}/{{ model.name }}"{% if model.name in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a></th>
+                                    <th scope="row"><a href="{{ app }}{{ path }}/{{ model.link }}"{% if model.name in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a></th>
                                 {% else %}
                                     <th scope="row">{{ model.name }}</th>
                                 {% endif %}
                                 <!-- 录入信息的按钮 -->
-                                <td><a href="{{ app }}{{ path }}/{{ model.name }}/add" class="addlink">增加</a></td>
+                                <td><a href="{{ app }}{{ path }}/{{ model.link }}/add" class="addlink">增加</a></td>
                             </tr>
                         {% endfor %}
                     </table>
                 </div>
             </nav>
-            {% if results or fieldset %}
-                <div id="content-start" class="content" tabindex="-1">
-                    <div id="content" class="{% block coltype %}colM{% endblock %}">
-                        {% if name %}<h1>{{ name }}</h1>{% endif %}
-                        {% if sub_name %}<h2>{{ sub_name }}</h2>{% endif %}
-                        {% block content %}
-                            {% block object-tools %}{% endblock %}
-                            {{ content }}
-                        {% endblock %}
-                        {% block sidebar %}{% endblock %}
-                        <br class="clear">
-                    </div>
-                </div>
-            {% elif graph %}
+            {% if graph %}
             <div style="display: block; margin:100px;" >
                 {% for g in graph %}
                     <div id="{{ g }}" style="width:700px; height:700px; " align="center" ></div>
@@ -183,6 +170,19 @@
                 {% endfor %}
                 </script>
             </div>
+            {% else %}
+                <div id="content-start" class="content" tabindex="-1">
+                    <div id="content" class="{% block coltype %}colM{% endblock %}">
+                        {% if name %}<h1>{{ name }}</h1>{% endif %}
+                        {% if sub_name %}<h2>{{ sub_name }}</h2>{% endif %}
+                        {% block content %}
+                            {% block object-tools %}{% endblock %}
+                            {{ content }}
+                        {% endblock %}
+                        {% block sidebar %}{% endblock %}
+                        <br class="clear">
+                    </div>
+                </div>
             {% endif %}
         </div>
     </div>
