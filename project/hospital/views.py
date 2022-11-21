@@ -15,13 +15,15 @@ import json
 
 # Create your views here.
 def gen_content():
-    content = {'title': 'Hospital Admin System',
-               'path': '/hospital/data',
-               'has_add_permission': True,
-               'results': [],
-               'models': [{"name": x._meta.verbose_name}
-                          for x in apps.get_app_config("hospital").get_models()],
-               }
+    content = {
+        'title': 'Hospital Admin System',
+        'app': '/hospital',
+        'path': '/data',
+        'has_add_permission': True,
+        'results': [],
+        'models': [{"name": x._meta.verbose_name}
+                    for x in apps.get_app_config("hospital").get_models()],
+    }
     return content
 
 
@@ -63,12 +65,12 @@ def login(request):
             return redirect(redirect_to)
         else:
             messages.error(request, "用户名或密码错误，登录失败")
-            return redirect(r'/login.html', context={"next": request.POST['next']})
+            return redirect(r'/hospital/login/', context={"next": request.POST['next']})
 
 
 def logout(request):
     auth.logout(request)
-    return redirect(r'/index.html')
+    return redirect(r'/hospital/login/')
 
 
 def form(request):

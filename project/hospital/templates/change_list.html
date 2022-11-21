@@ -6,7 +6,7 @@
     <ul class="object-tools">
       {% if has_add_permission %}
         <li>
-            <a href="{{ path }}/{{ name}}/add" class="addlink">
+            <a href="{{ app }}{{ path }}/{{ name}}/add" class="addlink">
               Add {{ name }}
             </a>
         </li>
@@ -18,7 +18,17 @@
     <div class="changelist-form-container">
       <form id="changelist-form" method="post" novalidate>
         <div class="">
-          <input type="search" id="result-filter" placeholder="输入以筛选...">
+          <input type="search" id="result-filter" placeholder="输入以筛选..." >
+          <!-- 阻止上面的input回车后自动提交表单 -->
+          <input type="text" style="display: none;">
+          <script>
+            document.querySelector('#result-filter').addEventListener('keydown', onEnter);
+            function onEnter(e) {
+              if(e.key.indexOf("Enter") !== -1) {
+                window.location.href=window.location.pathname+'?search='+$('#result-filter').val();
+              }
+            }
+          </script>
           <div class="button" style="display: inline" name="search" value="0" 
             onclick="window.location.href=window.location.pathname+'?search='+$('#result-filter').val()">
             筛选
@@ -43,7 +53,7 @@
                 {% for result in results %}
                   <tr>
                     <td class="action-checkbox"><input type="checkbox" name="_selected_action" value="{{ result.value }}" class="action-select"></td>
-                    <th class="field-__str__"><a href="{{ path }}/{{ name }}/{{ result.value }}/change/">{{ result.value }}</a></th>
+                    <th class="field-__str__"><a href="{{ app }}{{ path }}/{{ name }}/{{ result.value }}/change/">{{ result.value }}</a></th>
                   </tr>
                 {% endfor %}
               </tbody>
