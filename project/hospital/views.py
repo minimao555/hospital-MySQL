@@ -59,9 +59,11 @@ def form(request):
         path_list = request.path.strip('/').split('/')
         if len(path_list) < 2:
             raise "Path error: " + request.path
+        mode = path_list[-1]
         item = path_list[-2]
         model_name = path_list[-3]
-        ViewBackend.fillModelContent(content, model_name)
+        ViewBackend.fillModelProperties(content, model_name)
+        # TODO: generate model fields (in backend.py)
 
         content['item'] = item
         content['fieldset'] = [
@@ -165,6 +167,7 @@ def addform(request):
 def deleteform(request):
     print(request.path)
     path_list = request.path.split("/")
+    # TODO: delete selected item
     # 重定向到二级目录
     return redirect("/".join(path_list[:-2] if path_list[-1] else path_list[:-3]))
 
