@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import django.apps
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth, messages
@@ -5,33 +8,47 @@ from django.http import HttpResponse
 from django.apps import apps
 from django.db import models
 import base64
-from jinja2 import Environment, FileSystemLoader
-from pyecharts.globals import CurrentConfig
 from pyecharts import options as opts
 from pyecharts.charts import Bar, Pie
 from pyecharts.faker import Faker
 import json
 
 
+class ViewBackend:
+    app: django.apps.AppConfig = apps.get_app_config("hospital")
+
+    @classmethod
+    def gen_content(cls) -> dict[str, str | list | list[dict]]:
+        content = {'title': 'Hospital Admin System',
+                   'path': '/hospital/data',
+                   'has_add_permission': True,
+                   'results': [],
+                   'models': [{"name": x._meta.verbose_name,
+                               "link": x._meta.model_name}
+                              for x in cls.app.get_models()],
+                   }
+        return content
+
+    @classmethod
+    def get_result(cls, user, content: dict[str, str], model_name: str, value: str, key: str = ""):
+        # TODO: add user authentication
+        model = cls.app.get_model(model_name)
+        # if key == "":   # default search method
+        # TODO: default query by id (general method)
+
+        # else:
+        # TODO: advanced query
+
+
 # Create your views here.
-def gen_content():
-    content = {'title': 'Hospital Admin System',
-               'path': '/hospital/data',
-               'has_add_permission': True,
-               'results': [],
-               'models': [{"name": x._meta.verbose_name}
-                          for x in apps.get_app_config("hospital").get_models()],
-               }
-    return content
-
-
 @login_required(redirect_field_name='next', login_url='/login/')
 def index(request):
-    content = gen_content()
-    path_list = request.path.split('/')
-    model = path_list[-1] if path_list[-1] else path_list[-2] # 路径最后可能是/
+    content = ViewBackend.gen_content()
+    path_list = request.path.strip('/').split('/')
+    model_name = path_list[-1]
+    ViewBackend.get_result(auth.get_user(request), content, model_name, "test")
     for m in content['models']:
-        if m['name'] == model:
+        if m['name'] == model_name:
             content['results'] = [
                 {'value': '123'},
                 {'value': 'qwe'},
@@ -73,7 +90,7 @@ def logout(request):
 
 def form(request):
     if request.method == 'GET':
-        content = gen_content()
+        content = ViewBackend.gen_content()
         path_list = request.path.split('/')
         if len(path_list) < 2:
             raise "Path error: " + request.path
@@ -136,11 +153,11 @@ def form(request):
 
 
 def addform(request):
-    content = gen_content()
+    content = ViewBackend.gen_content()
     path_list = request.path.split('/')
     if len(path_list) < 2:
         raise "Path error: " + request.path
-    item = path_list[-1] if path_list[-1] else path_list[-2]
+    # item = path_list[-1] if path_list[-1] else path_list[-2]
     model = path_list[-2] if path_list[-1] else path_list[-3]
     for m in content['models']:
         if m['name'] == model:
@@ -190,8 +207,9 @@ def deleteform(request):
     # 重定向到二级目录
     return redirect("/".join(path_list[:-2] if path_list[-1] else path_list[:-3]))
 
+
 def graph(request):
-    content = gen_content()
+    content = ViewBackend.gen_content()
 
     content['graph'] = [
         'Pie',
@@ -212,6 +230,8 @@ def response_as_json(data):
     )
     response["Access-Control-Allow-Origin"] = "*"
     return response
+
+
 def json_response(data, code=200):
     data = {
         "code": code,
@@ -220,16 +240,18 @@ def json_response(data, code=200):
     }
     return response_as_json(data)
 
+
 def render_graph(request):
     c = (
         Pie()
-            .add("", [list(z) for z in zip(Faker.choose(), Faker.values())])
-            .set_colors(["blue", "green", "yellow", "red", "pink", "orange", "purple"])
-            .set_global_opts(title_opts=opts.TitleOpts(title="Pie-示例"))
-            .set_series_opts(label_opts=opts.LabelOpts(formatter="{b}: {c}"))
-            .dump_options_with_quotes()
+        .add("", [list(z) for z in zip(Faker.choose(), Faker.values())])
+        .set_colors(["blue", "green", "yellow", "red", "pink", "orange", "purple"])
+        .set_global_opts(title_opts=opts.TitleOpts(title="Pie-示例"))
+        .set_series_opts(label_opts=opts.LabelOpts(formatter="{b}: {c}"))
+        .dump_options_with_quotes()
     )
     return json_response(json.loads(c))
+
 
 def ico(request):
     return HttpResponse(open(r'hospital\templates\ico\logo.png', 'rb').read(), content_type='image/jpg')
