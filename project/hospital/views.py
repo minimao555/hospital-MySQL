@@ -82,6 +82,22 @@ def form(request):
             },
             {
                 "required": True,
+                "type": "link",
+                "name": "qqqq",
+                "data": "qwe",
+                "link": request.path
+            },
+            {
+                "required": True,
+                "type": "time",
+                "name": "qqqqq",
+                "data": {
+                    "date": "2022/11/22",
+                    "time": "15:03"
+                }
+            },
+            {
+                "required": True,
                 "type": "textarea",
                 "name": "www",
                 "data": "eeee",
@@ -141,6 +157,13 @@ def addform(request):
             "type": "text",
             "name": "hhh",
             "data": ""
+        },
+        {
+            "required": True,
+            "type": "link",
+            "name": "qqqq",
+            "data": "qwe",
+            "link": request.path
         },
         {
             "required": True,
