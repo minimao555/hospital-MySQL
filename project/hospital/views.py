@@ -20,8 +20,8 @@ def index(request):
         messages.error(request, "找不到指定的项目")
         return redirect('/')
     search_value = request.GET.get("search")
-    search_results = ViewBackend.getResult(auth.get_user(request), model, search_value)
-    content['results'] = ViewBackend.extractResults(search_results)
+    search_results = ViewBackend.getIndexResult(auth.get_user(request), model, search_value)
+    content['results'] = ViewBackend.extractIndexResults(search_results)
     for m in content['models']:
         if m['name'].replace(' ', '') == model_name:
             for k, v in m.items():
@@ -63,16 +63,16 @@ def form(request):
         if len(path_list) < 2:
             raise "Path error: " + request.path
         mode = path_list[-1]
-        item = path_list[-2]
+        item_pk = path_list[-2]
         model_name = path_list[-3]
-        if (model := ViewBackend.get_model(model_name)) is None:
+        if ((model := ViewBackend.get_model(model_name)) is None) or \
+           ((item := ViewBackend.getItem(auth.get_user(request), model, item_pk)) is None):
             messages.error(request, "找不到指定的项目")
             return redirect("/")
-        ViewBackend.fillModelProperties(content, model_name)
-        # TODO: generate model fields (in backend.py)
 
-        content['item'] = item
-        content['fieldset'] = ViewBackend.genFieldSet(model, item)
+        ViewBackend.fillModelProperties(content, model_name)
+        content['item'] = item_pk
+        content['fieldset'] = ViewBackend.genFieldSet(item)
         content['fieldset'] = [
             {
                 "required": True,

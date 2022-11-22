@@ -34,12 +34,12 @@
             <div id="branding">
                 <h1 id="site-name"><a href="{{ app }}">{{ title }}</a></h1>
             </div>
-            <div id="logout">
-                <h2 id="logout-a"
-                    {% if not username %}
-                        style="visibility: hidden"
-                    {% endif %}
-                ><a href="{{ app }}/logout">{{ username }} (Logout)</a></h2>
+            <div id="auth">
+                {% if username %}
+                    <h2 id="auth_a"><a href="{{ app }}/logout">{{ username }} (Logout)</a></h2>
+                {% else %}
+                    <h2 id="auth_a"><a href="{{ app }}/login">Login</a></h2>
+                {% endif %}
             </div>
         </div>
         <div class="main shifted" id="main">
