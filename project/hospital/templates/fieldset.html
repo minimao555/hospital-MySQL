@@ -7,9 +7,9 @@
           {{ line.name }}
         </label>
         {% if line.type == "text" %}
-          <input type="text" name="{{ line.name }}" value="{{ line.data }}" class="vTextField" maxlength="{% if line.maxlength %}{{ line.maxlength }}{% else %}12{% endif %}" {% if line.required %}required {% endif %}id="id_{{ line.name }}" {% if not line.editable %}disabled{% endif %}>
+          <input type="text" name="{{ line.name }}" value="{{ line.data }}" class="vTextField" maxlength="{% if line.maxlength %}{{ line.maxlength }}{% else %}12{% endif %}" {% if line.required %}required {% endif %}id="id_{{ line.name }}" {% if line.disable %}disabled{% endif %}>
         {% elif line.type == "textarea" %}
-          <textarea name="{{ line.name }}" cols="{{ line.cols }}" rows="{{ line.rows }}" class="vLargeTextField" {% if line.required %}required {% endif %}id="id_{{ line.name }}" {% if not line.editable %}disabled{% endif %}>{{ line.data }}</textarea>
+          <textarea name="{{ line.name }}" cols="{{ line.cols }}" rows="{{ line.rows }}" class="vLargeTextField" {% if line.required %}required {% endif %}id="id_{{ line.name }}" {% if line.disable %}disabled{% endif %}>{{ line.data }}</textarea>
         {% elif line.type == "select" %}
           <div class="related-widget-wrapper" data-model-ref="{{ line.name }}">
             <select name="{{ line.name }}" title="{{ line.name }}" {% if line.required %}required{% endif %} id="id_{{ line.name }}_id">
@@ -31,7 +31,7 @@
         {% elif line.type == "picture" %}
         <img name="{{ line.name }}" src="data:image/png;base64,{{ line.base64 }}" cols="{{ line.cols }}" rows="{{ line.rows }}" {% if line.required %}required {% endif %}id="id_{{ line.name }}" alt="{{ line.name }}" />
         {% elif line.type == "link" %}
-        <a class="vTextField" style="verticla-align: middle; line-height:30px;" name="{{ line.name }}" href="{{ line.href }}" {% if line.required %}required {% endif %}id="id_{{ line.name }}">{{ line.data }}</a>
+        <a class="vTextField" style="verticla-align: middle; line-height:30px;" name="{{ line.name }}" href="{{ app }}{{ path }}/{{ line.link }}/change" {% if line.required %}required {% endif %}id="id_{{ line.name }}">{{ line.data }}</a>
         {% elif line.type == "time" %}
         <p class="datetime">
           日期： 

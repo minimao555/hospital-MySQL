@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import datetime
 from enum import Enum
 from typing import Type
 from functools import singledispatch
@@ -157,9 +159,26 @@ class ViewBackend:
             field: models.Field
             if not create:
                 field_value = field.value_from_object(item)
+                if field == models.ForeignKey:
+                    field_value: models.Model
+                    item_content = genItemContent(field, field_value.pk)
+                elif field == models.IntegerField:
+                    item_content = genItemContent(field, str(field_value))
+                elif field.name == "photo":
+                    item_content = genItemContent(field, field_value, is_picture=True)
+                else:       # default param
+                    item_content = genItemContent(field, field_value)
+                if field == item._meta.pk:
+                    item_content["disable"] = True
             else:
-                field_value = ""
-            return_list.append(genItemContent(field, field_value))
+                if field == models.ForeignKey:
+                    item_content = genItemContent(models.CharField(verbose_name=field.name, blank=False), "")
+                elif field == models.DateTimeField:
+                    item_content = genItemContent(field, datetime.datetime.now())
+                else:
+                    item_content = genItemContent(field, "")
+            return_list.append(item_content)
+        return return_list
 
     @classmethod
     def get_model(cls, model_name: str) -> models.Model | None:
@@ -176,7 +195,7 @@ class ViewBackend:
 
 # TODO: finish genItemContent
 @singledispatch
-def genItemContent(field: models.Field, value: str) -> dict:
+def genItemContent(field: models.Field, value, **kwargs) -> dict:
     """
     generate Content subset for each item, single dispatched for generic type support
     :param field: target field
@@ -189,23 +208,58 @@ def genItemContent(field: models.Field, value: str) -> dict:
 @genItemContent.register(models.CharField)
 @genItemContent.register(models.IntegerField)
 def _(field: models.CharField | models.IntegerField, value: str) -> dict:
-    print("text block")
-    pass
+    ret: dict = {
+        "required": not field.blank,
+        "type": "text",
+        "data": value,
+        "name": field.verbose_name,
+    }
+    return ret
 
 
 @genItemContent.register(models.TextField)
-def _(field: models.TextField, value: str) -> dict:
-    print("textarea block")
-    pass
+def _(field: models.TextField, value: str | bytes, is_picture: bool = False) -> dict:
+    if not is_picture:
+        ret: dict = {
+            "required": not field.blank,
+            "type": "textarea",
+            "data": value,
+            "name": field.verbose_name,
+            "cols": 40,
+            "rows": 30,
+        }
+    else:
+        ret: dict = {
+            "required": not field.blank,
+            "type": "picture",
+            "name": field.verbose_name,
+            "base64": base64.b64encode(value).decode(),
+        }
+    return ret
 
 
 @genItemContent.register(models.ForeignKey)
 def _(field: models.ForeignKey, value: str) -> dict:
-    print("text block(can't edit)")
-    pass
+    # TODO: fill foreign key
+    ret: dict = {
+        "required": not field.blank,
+        "type": "link",
+        "data": value,
+        "name": field.verbose_name,
+        "link": value,
+    }
+    return ret
 
 
 @genItemContent.register(models.DateTimeField)
-def _(field: models.ForeignKey, value: str) -> dict:
-    print("Datetime block")
-    pass
+def _(field: models.DateTimeField, value: datetime.datetime) -> dict:
+    ret: dict = {
+        "required": not field.blank,
+        "type": "time",
+        "name": field.verbose_name,
+        "data": {
+            "date": value.date(),
+            "time": value.time(),
+        },
+    }
+    return ret

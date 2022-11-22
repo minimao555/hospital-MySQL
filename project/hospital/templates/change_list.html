@@ -6,7 +6,7 @@
     <ul class="object-tools">
       {% if has_add_permission %}
         <li>
-            <a href="{{ app }}{{ path }}/{{ name }}/add" class="addlink">
+            <a href="{{ app }}{{ path }}/{{ link }}/add" class="addlink">
               Add {{ name }}
             </a>
         </li>
@@ -53,7 +53,7 @@
                 {% for result in results %}
                   <tr>
                     <td class="action-checkbox"><input type="checkbox" name="_selected_action" value="{{ result.link }}" class="action-select"></td>
-                    <th class="field-__str__"><a href="{{ app }}{{ path }}/{{ name }}/{{ result.link }}/change/">{{ result.value }}</a></th>
+                    <th class="field-__str__"><a href="{{ app }}{{ path }}/{{ link }}/{{ result.link }}/change/">{{ result.value }}</a></th>
                   </tr>
                 {% endfor %}
               </tbody>

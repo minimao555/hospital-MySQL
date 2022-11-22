@@ -73,54 +73,54 @@ def form(request):
         ViewBackend.fillModelProperties(content, model_name)
         content['item'] = item_pk
         content['fieldset'] = ViewBackend.genFieldSet(item)
-        content['fieldset'] = [
-            {
-                "required": True,
-                "type": "text",
-                "name": "hhh",
-                "data": "qqqq"
-            },
-            {
-                "required": True,
-                "type": "link",
-                "name": "qqqq",
-                "data": "qwe",
-                "link": request.path
-            },
-            {
-                "required": True,
-                "type": "time",
-                "name": "qqqqq",
-                "data": {
-                    "date": "2022/11/22",
-                    "time": "15:03"
-                }
-            },
-            {
-                "required": True,
-                "type": "textarea",
-                "name": "www",
-                "data": "eeee",
-                "cols": 40,
-                "rows": 30
-            },
-            {
-                "required": True,
-                "type": "select",
-                "name": "test_model2",
-                "opts": ["123", "qwe", "asd"],
-                # "edit_url": "",
-                "selected": "123"
-            },
-            {
-                "required": True,
-                "type": "picture",
-                "name": "photo",
-                "base64": base64.b64encode(open('hospital/templates/doctor_0.png', 'rb').read()).decode(),
-                "cols": 40,
-                "rows": 30
-            },
-        ]
+        # content['fieldset'] = [
+        #     {
+        #         "required": True,
+        #         "type": "text",
+        #         "name": "hhh",
+        #         "data": "qqqq"
+        #     },
+        #     {
+        #         "required": True,
+        #         "type": "link",
+        #         "name": "qqqq",
+        #         "data": "qwe",
+        #         "link": request.path
+        #     },
+        #     {
+        #         "required": True,
+        #         "type": "time",
+        #         "name": "qqqqq",
+        #         "data": {
+        #             "date": "2022/11/22",
+        #             "time": "15:03"
+        #         }
+        #     },
+        #     {
+        #         "required": True,
+        #         "type": "textarea",
+        #         "name": "www",
+        #         "data": "eeee",
+        #         "cols": 40,
+        #         "rows": 30
+        #     },
+        #     {
+        #         "required": True,
+        #         "type": "select",
+        #         "name": "test_model2",
+        #         "opts": ["123", "qwe", "asd"],
+        #         # "edit_url": "",
+        #         "selected": "123"
+        #     },
+        #     {
+        #         "required": True,
+        #         "type": "picture",
+        #         "name": "photo",
+        #         "base64": base64.b64encode(open('hospital/templates/doctor_0.png', 'rb').read()).decode(),
+        #         "cols": 40,
+        #         "rows": 30
+        #     },
+        # ]
         content["buttons"] = [
             {
                 "value": "hhh",
@@ -245,6 +245,7 @@ def render_graph(request):
         .dump_options_with_quotes()
     )
     return json_response(json.loads(c))
+
 
 def ico(request):
     return HttpResponse(open(r'hospital\templates\ico\logo.png', 'rb').read(), content_type='image/jpg')
