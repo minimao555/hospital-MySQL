@@ -18,13 +18,13 @@
                 <option value="{{ opt }}"{% if line.selected == opt %} selected{% endif %}>{{ opt }}</option>
               {% endfor %}
             </select>
-            <a class="related-widget-wrapper-link" id="change_id_{{ line.name }}_id" data-popup="yes" title="更改选中的{{ line.name }}" href="{{ path }}/{{ line.name }}/{{ line.selected }}/change/">
+            <a class="related-widget-wrapper-link" id="change_id_{{ line.name }}_id" data-popup="yes" title="更改选中的{{ line.name }}" href="{{ app }}{{ path }}/{{ line.name }}/{{ line.selected }}/change/">
               <img src="/static/img/icon-changelink.svg" alt="修改">
             </a>
-            <a class="related-widget-wrapper-link" id="add_id_{{ line.name }}_id" data-popup="yes" href="{{ path }}/{{ line.name }}/add/" title="增加另一个{{ line.name }}">
+            <a class="related-widget-wrapper-link" id="add_id_{{ line.name }}_id" data-popup="yes" href="{{ app }}{{ path }}/{{ line.name }}/add/" title="增加另一个{{ line.name }}">
               <img src="/static/img/icon-addlink.svg" alt="增加">
             </a> 
-            <a class="related-widget-wrapper-link" id="view_id_{{ line.name }}_id" title="查看已选择的{{ line.name }}" href="{{ path }}/{{ line.name }}/{{ line.selected }}/change/">
+            <a class="related-widget-wrapper-link" id="view_id_{{ line.name }}_id" title="查看已选择的{{ line.name }}" href="{{ app }}{{ path }}/{{ line.name }}/{{ line.selected }}/change/">
               <img src="/static/img/icon-viewlink.svg" alt="查看">
             </a>
           </div>
@@ -44,9 +44,9 @@
       $("#id_{{ line.name }}_id").change(
         function() {
           $("#view_id_{{ line.name }}_id")[0].href = 
-                "{{ path }}/{{ line.name }}/" + document.getElementById('id_{{ line.name }}_id').value + "/change/";
+                "{{ app }}{{ path }}/{{ line.name }}/" + document.getElementById('id_{{ line.name }}_id').value + "/change/";
           $("#change_id_{{ line.name }}_id")[0].href = 
-                "{{ path }}/{{ line.name }}/" + document.getElementById('id_{{ line.name }}_id').value + "/change/";
+                "{{ app }}{{ path }}/{{ line.name }}/" + document.getElementById('id_{{ line.name }}_id').value + "/change/";
       });
     {% endif %}
   {% endfor %}

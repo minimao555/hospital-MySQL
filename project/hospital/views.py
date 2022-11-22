@@ -13,14 +13,17 @@ from .backend import ViewBackend
 # Create your views here.
 @login_required(redirect_field_name='next', login_url='/login/')
 def index(request):
-    content = ViewBackend.genContent()
+    content = ViewBackend.genContent(request)
     path_list = request.path.strip('/').split('/')
     model_name = path_list[-1]
+    if (model := ViewBackend.get_model(model_name)) is None:
+        messages.error(request, "找不到指定的项目")
+        return redirect('/')
     search_value = request.GET.get("search")
-    search_results = ViewBackend.getResult(auth.get_user(request), model_name, search_value)
-    content['results'] = ViewBackend.extractResults(search_results)
+    search_results = ViewBackend.getIndexResult(auth.get_user(request), model, search_value)
+    content['results'] = ViewBackend.extractIndexResults(search_results)
     for m in content['models']:
-        if m['name'] == model_name:
+        if m['name'].replace(' ', '') == model_name:
             for k, v in m.items():
                 # 将选中的表的name等信息放到content直接索引中
                 content[k] = v
@@ -45,27 +48,31 @@ def login(request):
             return redirect(redirect_to)
         else:
             messages.error(request, "用户名或密码错误，登录失败")
-            return redirect(r'/login.html', context={"next": request.POST['next']})
+            return redirect(r'/hospital/login/', context={"next": request.POST['next']})
 
 
 def logout(request):
     auth.logout(request)
-    return redirect(r'/index.html')
+    return redirect("/")
 
 
 def form(request):
     if request.method == 'GET':
-        content = ViewBackend.genContent()
+        content = ViewBackend.genContent(request)
         path_list = request.path.strip('/').split('/')
         if len(path_list) < 2:
             raise "Path error: " + request.path
         mode = path_list[-1]
-        item = path_list[-2]
+        item_pk = path_list[-2]
         model_name = path_list[-3]
-        ViewBackend.fillModelProperties(content, model_name)
-        # TODO: generate model fields (in backend.py)
+        if ((model := ViewBackend.get_model(model_name)) is None) or \
+           ((item := ViewBackend.getItem(auth.get_user(request), model, item_pk)) is None):
+            messages.error(request, "找不到指定的项目")
+            return redirect("/")
 
-        content['item'] = item
+        ViewBackend.fillModelProperties(content, model_name)
+        content['item'] = item_pk
+        content['fieldset'] = ViewBackend.genFieldSet(item)
         content['fieldset'] = [
             {
                 "required": True,
@@ -116,7 +123,7 @@ def form(request):
 
 
 def addform(request):
-    content = ViewBackend.genContent()
+    content = ViewBackend.genContent(request)
     path_list = request.path.split('/')
     if len(path_list) < 2:
         raise "Path error: " + request.path
@@ -173,7 +180,7 @@ def deleteform(request):
 
 
 def graph(request):
-    content = ViewBackend.genContent()
+    content = ViewBackend.genContent(request)
 
     content['graph'] = [
         'Pie',
@@ -215,7 +222,6 @@ def render_graph(request):
         .dump_options_with_quotes()
     )
     return json_response(json.loads(c))
-
 
 def ico(request):
     return HttpResponse(open(r'hospital\templates\ico\logo.png', 'rb').read(), content_type='image/jpg')
