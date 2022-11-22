@@ -159,21 +159,21 @@ class ViewBackend:
             field: models.Field
             if not create:
                 field_value = field.value_from_object(item)
-                if field == models.ForeignKey:
-                    field_value: models.Model
-                    item_content = genItemContent(field, field_value.pk)
-                elif field == models.IntegerField:
-                    item_content = genItemContent(field, str(field_value))
-                elif field.name == "photo":
+                if type(field) == models.ForeignKey:
+                    foreign_model: models.Model = field.related_model
+                    item_content = genItemContent(field, field_value, model_name=foreign_model._meta.model_name)
+                elif field.name == "photo" or field.name == "picture":
                     item_content = genItemContent(field, field_value, is_picture=True)
                 else:       # default param
                     item_content = genItemContent(field, field_value)
                 if field == item._meta.pk:
                     item_content["disable"] = True
             else:
-                if field == models.ForeignKey:
-                    item_content = genItemContent(models.CharField(verbose_name=field.name, blank=False), "")
-                elif field == models.DateTimeField:
+                if type(field) == models.ForeignKey:
+                    foreign_model: models.Model = field.related_model
+                    item_content = genItemContent(models.CharField(verbose_name=field.name, blank=False), "",
+                                                  model_name=foreign_model._meta.model_name)
+                elif type(field) == models.DateTimeField:
                     item_content = genItemContent(field, datetime.datetime.now())
                 else:
                     item_content = genItemContent(field, "")
@@ -207,7 +207,8 @@ def genItemContent(field: models.Field, value, **kwargs) -> dict:
 
 @genItemContent.register(models.CharField)
 @genItemContent.register(models.IntegerField)
-def _(field: models.CharField | models.IntegerField, value: str) -> dict:
+@genItemContent.register(models.FloatField)
+def _(field: models.Field, value: str) -> dict:
     ret: dict = {
         "required": not field.blank,
         "type": "text",
@@ -239,14 +240,13 @@ def _(field: models.TextField, value: str | bytes, is_picture: bool = False) -> 
 
 
 @genItemContent.register(models.ForeignKey)
-def _(field: models.ForeignKey, value: str) -> dict:
-    # TODO: fill foreign key
+def _(field: models.ForeignKey, value: str, model_name: str) -> dict:
     ret: dict = {
         "required": not field.blank,
         "type": "link",
         "data": value,
         "name": field.verbose_name,
-        "link": value,
+        "link": "{}/{}".format(model_name, value),
     }
     return ret
 
@@ -257,9 +257,10 @@ def _(field: models.DateTimeField, value: datetime.datetime) -> dict:
         "required": not field.blank,
         "type": "time",
         "name": field.verbose_name,
-        "data": {
+    }
+    if value is not None:
+        ret["data"] = {
             "date": value.date(),
             "time": value.time(),
-        },
-    }
+        }
     return ret
