@@ -13,8 +13,8 @@ urlpatterns = [
     # 中间出现一个/，且最后是/change，则为请求具体的表单，如test_model1/123/change
     re_path(r'^data/[^/]*?/[^/]*?/change[/]?$', views.form),
     # 最后是/add，则为添加，如test_model1/add
-    re_path(r'^data/[^/]*?/add[/]?$', views.addform),
+    re_path(r'^data/[^/]*?/add[/]?$', views.addForm),
     # 中间出现一个/，且最后是/delete，则为删除该表单，如test_model1/123/delete
-    re_path(r'^data/[^/]*?/[^/]*?/delete[/]?$', views.deleteform),
+    re_path(r'^data/[^/]*?/[^/]*?/delete[/]?$', views.deleteForm),
     re_path(r'^graph[/]?$', views.render_graph),
 ]
