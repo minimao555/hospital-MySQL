@@ -17,6 +17,8 @@ from . import models as my_models
 class ErrorMsg(Enum):
     no_permission_err = "用户没有访问权限"
     not_found = "找不到指定的项目"
+    integrity_err = "主键重复: "
+    data_err = "输入字段错误: "
     login_failed = "用户名或密码错误，登录失败"
 
 
@@ -83,6 +85,10 @@ class ViewBackend:
         """
         permission = "{}.{}_{}".format(model._meta.app_label, perm.value, model._meta.model_name)
         return user.has_perm(permission)
+
+    @staticmethod
+    def getPostItemID(item: models.Model, form: dict) -> str:
+        return form[item._meta.pk.verbose_name]
 
     @classmethod
     def updateItem(cls, user: User, item: models.Model, form: dict, insert: bool = True) -> None:
@@ -233,7 +239,7 @@ class ViewBackend:
                     item_content["readonly"] = True
             else:
                 if type(field) == models.ForeignKey:
-                    foreign_model: models.Model = field.related_model
+                    # foreign_model: models.Model = field.related_model
                     item_content = genItemContent(models.CharField(verbose_name=field.name, blank=False), "")
                 elif type(field) == models.DateTimeField:
                     item_content = genItemContent(field, datetime.datetime.now())

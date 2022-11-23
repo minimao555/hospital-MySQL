@@ -1,3 +1,4 @@
+import django.db
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth, messages
@@ -85,8 +86,22 @@ def form(request):
         ]
         return render(request, r'change_form.html', context=content)
     elif request.method == 'POST':
-        ViewBackend.updateItem(auth.get_user(request), item, request.POST, insert=False)
-        # TODO: check redirect action
+        try:
+            ViewBackend.updateItem(auth.get_user(request), item, request.POST, insert=False)
+            goto = request.POST['goto']
+            if goto == "save":
+                return redirect('../../')
+            elif goto == "add another":
+                return redirect('../../add')
+            elif goto == "continue edit":
+                return redirect(request.path)
+            return redirect(request.path)
+        except PermissionError:
+            messages.error(request, ErrorMsg.no_permission_err.value)
+        except django.db.IntegrityError as e:
+            messages.error(request, ErrorMsg.integrity_err.value + str(e))
+        except django.db.DataError as e:
+            messages.error(request, ErrorMsg.data_err.value + str(e))
         return redirect(request.path)
 
 
@@ -102,9 +117,24 @@ def addForm(request):
         content['fieldset'] = ViewBackend.genFieldSet(model, create=True)
         return render(request, r'change_form.html', context=content)
     elif request.method == 'POST':
-        ViewBackend.updateItem(auth.get_user(request), model, request.POST, insert=True)
-        # TODO: check redirect action
-        return redirect('./')
+        try:
+            ViewBackend.updateItem(auth.get_user(request), model, request.POST, insert=True)
+            goto = request.POST['goto']
+            if goto == "save":
+                return redirect('./')
+            elif goto == "add another":
+                return redirect(request.path)
+            elif goto == "continue edit":
+                item_id = ViewBackend.getPostItemID(model, request.POST)
+                return redirect('./%s/change' % item_id)
+            return redirect(request.path)
+        except PermissionError:
+            messages.error(request, ErrorMsg.no_permission_err.value)
+        except django.db.IntegrityError as e:
+            messages.error(request, ErrorMsg.integrity_err.value + str(e))
+        except django.db.DataError as e:
+            messages.error(request, ErrorMsg.data_err.value + str(e))
+        return redirect(request.path)
 
 
 def deleteForm(request):
