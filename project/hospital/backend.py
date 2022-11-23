@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import binascii
 import datetime
 from enum import Enum
 from typing import Type
@@ -72,7 +73,7 @@ class ViewBackend:
         return user.username
 
     @staticmethod
-    def checkPermission(user: User, model: Type[models.Model], perm: Perm) -> bool:
+    def checkPermission(user: User, model: models.Model | Type[models.Model], perm: Perm) -> bool:
         """
         check if current user has specific permission
         :param user:
@@ -93,7 +94,7 @@ class ViewBackend:
         :param form: param dict
         :param insert: whether insert item, or update it
         """
-        if not cls.checkPermission(user, type(item), cls.Perm.edit):
+        if not cls.checkPermission(user, item, cls.Perm.edit):
             raise PermissionError
         key_list = []
         value_list = []
@@ -104,7 +105,10 @@ class ViewBackend:
             key_list.append(field.column)
             if field.column in {"photo", "picture"}:
                 if insert:
-                    value_list.append(base64.b64decode(form[field.verbose_name]))
+                    try:
+                        value_list.append(base64.b64decode(form[field.verbose_name]))
+                    except binascii.Error:
+                        value_list.append(b'')
                 else:
                     key_list.pop()
             else:
@@ -119,7 +123,7 @@ class ViewBackend:
                 item._meta.db_table,
                 ", ".join(["{} =%s".format(key) for key in key_list]),
                 item._meta.pk.db_column)
-        value_list.append(item.pk)      # primary key in `where` clause
+            value_list.append(item.pk)      # primary key in `where` clause
         with connection.cursor() as cursor:
             cursor.execute(query, value_list)
 
@@ -130,7 +134,7 @@ class ViewBackend:
         :param user: user made the request
         :param item: item to delete
         """
-        if not cls.checkPermission(user, type(item), cls.Perm.edit):
+        if not cls.checkPermission(user, item, cls.Perm.edit):
             raise PermissionError
         query = "DELETE FROM {} WHERE {}=%s".format(item._meta.db_table, item._meta.pk.db_column)
         with connection.cursor() as cursor:
