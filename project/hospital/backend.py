@@ -93,13 +93,13 @@ class ViewBackend:
         :param form: param dict
         :param insert: whether insert item, or update it
         """
-        if not cls.checkPermission(user, item, cls.Perm.edit):
+        if not cls.checkPermission(user, type(item), cls.Perm.edit):
             raise PermissionError
         key_list = []
         value_list = []
         for field in item._meta.fields:
             field: models.Field
-            if field == item._meta.pk:
+            if field == item._meta.pk and not insert:
                 continue
             key_list.append(field.column)
             if field.column in {"photo", "picture"}:
