@@ -80,17 +80,7 @@ def form(request):
         ViewBackend.fillModelProperties(content, model_name)
         content['item'] = item_pk
         content['fieldset'] = ViewBackend.genFieldSet(item)
-        # TODO: add button content fill method
-        content["buttons"] = [
-            {
-                "value": "View all Patients",
-                "type": AdvancedSearchType.patient.value
-            },
-            {
-                "value": "View all MR",
-                "type": AdvancedSearchType.mr.value
-            },
-        ]
+        content["buttons"] = ViewBackend.genButtonContent(model)
         return render(request, r'change_form.html', context=content)
     elif request.method == 'POST':
         try:

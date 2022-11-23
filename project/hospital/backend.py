@@ -93,7 +93,28 @@ class ViewBackend:
 
     @staticmethod
     def getPostItemID(item: models.Model, form: dict) -> str:
+        """
+        get Item id from the form
+        :param item: corresponding item model needed
+        :param form:
+        :return: item id in form
+        """
         return form[item._meta.pk.verbose_name]
+
+    @staticmethod
+    def genButtonContent(model: models.Model) -> list[dict]:
+        if model == my_models.Doctor:
+            return [
+                {
+                    "value": "View all Patients",
+                    "type": AdvancedSearchType.patient.value
+                },
+                {
+                    "value": "View all MR",
+                    "type": AdvancedSearchType.mr.value
+                },
+            ]
+        return []
 
     @classmethod
     def updateItem(cls, user: User, item: models.Model, form: dict, insert: bool = True) -> None:
