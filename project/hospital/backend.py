@@ -219,7 +219,7 @@ class ViewBackend:
                 # results = model.objects.raw("select * from doctor")
             else:
                 query = "SELECT * FROM {} where {} LIKE %s".format(model._meta.db_table, model._meta.pk.db_column)
-                return model.objects.raw(query, search_value)
+                return model.objects.raw(query, [search_value])
         else:
             if search_type == AdvancedSearchType.patient:
                 query = "SELECT * FROM patient WHERE patient.patientID IN " \
