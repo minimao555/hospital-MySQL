@@ -28,7 +28,26 @@
       
       <script id="django-admin-form-add-constants" src="/static/js/change_form.js" async=""></script>
       <script id="django-admin-prepopulated-fields-constants" src="/static/js/prepopulate_init.js" data-prepopulated-fields="[]"></script>
-
+      <script>
+        var inputs = document.querySelector("fieldset").querySelectorAll("[required]").forEach((item, index) => {
+          item.addEventListener("change", (e) => {
+            if(!e || !e.path) {
+              return;
+            }
+            if(!e.path[0].value) {
+              document.querySelectorAll("[name=goto]").forEach((item, index) => {
+                var disabled = document.createAttribute("disabled");
+                disabled.value = 'disabled';
+                item.attributes.setNamedItem(disabled);
+              });
+            } else {
+              document.querySelectorAll("[name=goto]").forEach((item, index) => {
+                item.attributes.removeNamedItem("disabled");
+              });
+            }
+          });
+        });
+      </script>
     </div>
   </form>
 </div>

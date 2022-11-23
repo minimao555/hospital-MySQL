@@ -314,6 +314,8 @@ def _(field: models.Field, value: str) -> dict:
         "type": "text",
         "data": value,
         "name": field.verbose_name,
+        # "check": "age",
+        # "check": "phone",
     }
     return ret
 

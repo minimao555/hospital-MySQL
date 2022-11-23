@@ -1,5 +1,6 @@
 
 <fieldset class="module aligned">
+
   {% for line in fieldset %}
     <div class="form-row">
       <div>
@@ -7,7 +8,7 @@
           {{ line.name }}
         </label>
         {% if line.type == "text" %}
-          <input type="text" name="{{ line.name }}" value="{{ line.data }}" class="vTextField" maxlength="{% if line.maxlength %}{{ line.maxlength }}{% else %}12{% endif %}" {% if line.required %}required {% endif %}id="id_{{ line.name }}" {% if line.readonly %}readonly{% endif %}>
+          <input placeholder="" title="{{ line.name }}" type="text" name="{{ line.name }}" value="{{ line.data }}" class="vTextField" maxlength="{% if line.maxlength %}{{ line.maxlength }}{% else %}13{% endif %}" {% if line.required %}required {% endif %}id="id_{{ line.name }}" {% if line.readonly %}readonly{% endif %} check="{{ line.check }}">
         {% elif line.type == "textarea" %}
           <textarea name="{{ line.name }}" cols="{{ line.cols }}" rows="{{ line.rows }}" class="vLargeTextField" {% if line.required %}required {% endif %}id="id_{{ line.name }}" {% if line.readonly %}readonly{% endif %}>{{ line.data }}</textarea>
         {% elif line.type == "select" %}
@@ -59,4 +60,36 @@
       });
     {% endif %}
   {% endfor %}
+  document.querySelectorAll('[check=phone]').forEach((item, index) => {
+    item.addEventListener('change', (e) => {
+      if(!e || !e.path[0]) {
+        return;
+      }
+      var phone = e.path[0].value;
+      var part = phone.split('-');
+      if(part.length === 2) {
+        if(part[0].length !== 3 && part[0].length !== 4 || part[1].length !== 7 && part[1].length !== 8) {
+          alert("phone num error: " + phone);
+          e.path[0].value = "";
+        }
+      } else {
+        if(phone[0] != '1' || phone.length !== 11 || phone.search(/[^0-9]/) !== -1) {
+          alert("phone num error: " + phone);
+          e.path[0].value = "";
+        }
+      }
+    });
+  });
+  document.querySelectorAll('[check=age]').forEach((item, index) => {
+    item.addEventListener('change', (e) => {
+      if(!e || !e.path[0]) {
+        return;
+      }
+      var value = e.path[0].value;
+      if(value.search(/[^0-9]/) !== -1 || Number(value) < 0 ||  Number(value) > 150) {
+        alert("age error: " + value);
+        e.path[0].value = "";
+      }
+    });
+  });
 </script>
