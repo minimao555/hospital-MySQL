@@ -22,6 +22,11 @@ class ErrorMsg(Enum):
     login_failed = "用户名或密码错误，登录失败"
 
 
+class AdvancedSearchType(Enum):
+    patient = "patient"
+    mr_and_pl = "mr"
+
+
 class ViewBackend:
     class Perm(Enum):
         """

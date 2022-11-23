@@ -7,7 +7,7 @@ from pyecharts import options as opts
 from pyecharts.charts import Pie
 from pyecharts.faker import Faker
 import json
-from .backend import ViewBackend, ErrorMsg
+from .backend import ViewBackend, ErrorMsg, AdvancedSearchType
 
 
 # Create your views here.
@@ -76,12 +76,12 @@ def form(request):
         # TODO: add button content fill method
         content["buttons"] = [
             {
-                "value": "hhh",
-                "name": "aaa",
+                "value": "View all Patients",
+                "type": AdvancedSearchType.patient.value
             },
             {
-                "value": "hhhh",
-                "name": "aaaa",
+                "value": "View all MR/PL",
+                "type": AdvancedSearchType.mr_and_pl.value
             },
         ]
         return render(request, r'change_form.html', context=content)
