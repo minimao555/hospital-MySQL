@@ -20,8 +20,15 @@ def index(request):
         messages.error(request, ErrorMsg.not_found.value)
         return redirect('/')
     search_value = request.GET.get("search")
+    search_type = None
+    for search_type_candidate in AdvancedSearchType:
+        if search_type_candidate.value in request.GET:
+            search_type = search_type_candidate
+            search_value = request.GET.get(search_type_candidate.value)
+            model = ViewBackend.get_model(search_type.value)
+            break
     try:
-        search_results = ViewBackend.getIndexResult(auth.get_user(request), model, search_value)
+        search_results = ViewBackend.getIndexResult(auth.get_user(request), model, search_value, search_type)
     except PermissionError:
         messages.error(request, ErrorMsg.no_permission_err.value)
         return redirect('/')
@@ -80,8 +87,8 @@ def form(request):
                 "type": AdvancedSearchType.patient.value
             },
             {
-                "value": "View all MR/PL",
-                "type": AdvancedSearchType.mr_and_pl.value
+                "value": "View all MR",
+                "type": AdvancedSearchType.mr.value
             },
         ]
         return render(request, r'change_form.html', context=content)

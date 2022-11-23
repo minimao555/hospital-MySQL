@@ -23,8 +23,8 @@ class ErrorMsg(Enum):
 
 
 class AdvancedSearchType(Enum):
-    patient = "patient"
-    mr_and_pl = "mr"
+    patient = "patient"     # search all patients of specified doctor
+    mr = "medicalrecord"        # search all medical records
 
 
 class ViewBackend:
@@ -173,34 +173,41 @@ class ViewBackend:
         return content
 
     @classmethod
-    def getIndexResult(cls, user: User, model: models.Model, value: str | None = None, key: str | None = None) \
-            -> models.query.RawQuerySet | None:
+    def getIndexResult(cls, user: User, model: models.Model,
+                       search_value: str | None = None,
+                       search_type: AdvancedSearchType | None = None) -> models.query.RawQuerySet | None:
         """
         get raw SQL results from database
         :param user: user launched this query, used by permission system
         :param model: model
-        :param value: value to be searched
-        :param key: search in which key (used in advanced search)
+        :param search_value: value to be searched
+        :param search_type: search in which key (used in advanced search)
         :return: will return in the form of raw query result of corresponding model
         """
         if not cls.checkPermission(user, model, cls.Perm.view):
             raise PermissionError
-        if value is None:
+        if search_value is None:
             # select all
             return model.objects.raw("select * from {}".format(model._meta.db_table))
-        if key is None:  # default search method
-            value = "%" + value + "%"
+        if search_type is None:  # default search method
+            search_value = "%" + search_value + "%"
             if model._meta.model_name == "doctor" or model._meta.model_name == "patient":
                 query = "SELECT * FROM {} where {} LIKE %s or name LIKE %s" \
                     .format(model._meta.db_table, model._meta.pk.db_column)
-                results = model.objects.raw(query, (value, value))
+                return model.objects.raw(query, [search_value, search_value])
                 # results = model.objects.raw("select * from doctor")
             else:
                 query = "SELECT * FROM {} where {} LIKE %s".format(model._meta.db_table, model._meta.pk.db_column)
-                return model.objects.raw(query, value)
-            return results
-        # else:
-        # TODO: advanced query
+                return model.objects.raw(query, search_value)
+        else:
+            if search_type == AdvancedSearchType.patient:
+                query = "SELECT * FROM patient WHERE patient.patientID IN " \
+                        "(SELECT medical_records.patientID FROM medical_records " \
+                        "WHERE medical_records.doctorID=%s)"
+                return model.objects.raw(query, [search_value])
+            elif search_type == AdvancedSearchType.mr:
+                query = "SELECT * FROM medical_records WHERE doctorID=%s"
+                return model.objects.raw(query, [search_value])
 
     @classmethod
     def getItem(cls, user: User, model: models.Model, pk: str) -> models.Model | None:
