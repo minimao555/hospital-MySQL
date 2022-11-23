@@ -1,14 +1,22 @@
 from __future__ import annotations
 
+import base64
+import datetime
 from enum import Enum
 from typing import Type
 from functools import singledispatch
 
 from django.apps import apps
-from django.db import models
+from django.db import models, connection
 from django.contrib import auth
 from django.contrib.auth.models import User
 from . import models as my_models
+
+
+class ErrorMsg(Enum):
+    no_permission_err = "用户没有访问权限"
+    not_found = "找不到指定的项目"
+    login_failed = "用户名或密码错误，登录失败"
 
 
 class ViewBackend:
@@ -23,7 +31,6 @@ class ViewBackend:
         edit = "change"
 
     app: apps.AppConfig = apps.get_app_config("hospital")
-
 
     @staticmethod
     def extractIndexResults(model_results: models.query.RawQuerySet) -> list[dict]:
@@ -73,8 +80,62 @@ class ViewBackend:
         :param perm: Enum Perm, only edit & view permission types
         :return: bool, whether user has the permission
         """
-        permission = "{}.{}_{}".format(model._meta.app_label, perm, model._meta.model_name)
+        permission = "{}.{}_{}".format(model._meta.app_label, perm.value, model._meta.model_name)
         return user.has_perm(permission)
+
+    @classmethod
+    def updateItem(cls, user: User, item: models.Model, form: dict, insert: bool = True) -> None:
+        """
+        add item, fields from `form`
+        :param cls:
+        :param user:
+        :param item: model which add item to
+        :param form: param dict
+        :param insert: whether insert item, or update it
+        """
+        if not cls.checkPermission(user, type(item), cls.Perm.edit):
+            raise PermissionError
+        key_list = []
+        value_list = []
+        for field in item._meta.fields:
+            field: models.Field
+            if field == item._meta.pk and not insert:
+                continue
+            key_list.append(field.column)
+            if field.column in {"photo", "picture"}:
+                if insert:
+                    value_list.append(base64.b64decode(form[field.verbose_name]))
+                else:
+                    key_list.pop()
+            else:
+                value_list.append(form[field.verbose_name])
+        if insert:
+            query = "INSERT INTO {} ({}) VALUES ({})".format(
+                item._meta.db_table,
+                ", ".join(key_list),
+                ", ".join(["%s" for _ in range(len(key_list))]))
+        else:
+            query = "UPDATE {} SET {} WHERE {}=%s".format(
+                item._meta.db_table,
+                ", ".join(["{} =%s".format(key) for key in key_list]),
+                item._meta.pk.db_column)
+        value_list.append(item.pk)      # primary key in `where` clause
+        with connection.cursor() as cursor:
+            cursor.execute(query, value_list)
+
+    @classmethod
+    def deleteItem(cls, user: User, item: models.Model) -> None:
+        """
+        delete the specific item
+        :param user: user made the request
+        :param item: item to delete
+        """
+        if not cls.checkPermission(user, type(item), cls.Perm.edit):
+            raise PermissionError
+        query = "DELETE FROM {} WHERE {}=%s".format(item._meta.db_table, item._meta.pk.db_column)
+        with connection.cursor() as cursor:
+            cursor.execute(query, [item.pk])
+        pass
 
     @classmethod
     def genContent(cls, request) -> dict[str, str | list | list[dict]]:
@@ -108,7 +169,7 @@ class ViewBackend:
         :return: will return in the form of raw query result of corresponding model
         """
         if not cls.checkPermission(user, model, cls.Perm.view):
-            return None
+            raise PermissionError
         if value is None:
             # select all
             return model.objects.raw("select * from {}".format(model._meta.db_table))
@@ -136,12 +197,12 @@ class ViewBackend:
         :return: corresponding record item
         """
         if not cls.checkPermission(user, model, cls.Perm.view):
-            return None
+            raise PermissionError
         query = "SELECT * FROM {} where {}=%s".format(model._meta.db_table, model._meta.pk.db_column)
         results = model.objects.raw(query, [pk])
         if len(results) == 0:
             return None
-        assert len(results) == 1      # primary key should be unique
+        assert len(results) == 1  # primary key should be unique
         return results[0]
 
     @classmethod
@@ -157,9 +218,25 @@ class ViewBackend:
             field: models.Field
             if not create:
                 field_value = field.value_from_object(item)
+                if type(field) == models.ForeignKey:
+                    foreign_model: models.Model = field.related_model
+                    item_content = genItemContent(field, field_value, model_name=foreign_model._meta.model_name)
+                elif field.name in {"photo", "picture"}:
+                    item_content = genItemContent(field, field_value, is_picture=True)
+                else:  # default param
+                    item_content = genItemContent(field, field_value)
+                if field == item._meta.pk:
+                    item_content["readonly"] = True
             else:
-                field_value = ""
-            return_list.append(genItemContent(field, field_value))
+                if type(field) == models.ForeignKey:
+                    foreign_model: models.Model = field.related_model
+                    item_content = genItemContent(models.CharField(verbose_name=field.name, blank=False), "")
+                elif type(field) == models.DateTimeField:
+                    item_content = genItemContent(field, datetime.datetime.now())
+                else:
+                    item_content = genItemContent(field, "")
+            return_list.append(item_content)
+        return return_list
 
     @classmethod
     def get_model(cls, model_name: str) -> models.Model | None:
@@ -174,9 +251,8 @@ class ViewBackend:
             return None
 
 
-# TODO: finish genItemContent
 @singledispatch
-def genItemContent(field: models.Field, value: str) -> dict:
+def genItemContent(field: models.Field, value, **kwargs) -> dict:
     """
     generate Content subset for each item, single dispatched for generic type support
     :param field: target field
@@ -188,24 +264,60 @@ def genItemContent(field: models.Field, value: str) -> dict:
 
 @genItemContent.register(models.CharField)
 @genItemContent.register(models.IntegerField)
-def _(field: models.CharField | models.IntegerField, value: str) -> dict:
-    print("text block")
-    pass
+@genItemContent.register(models.FloatField)
+def _(field: models.Field, value: str) -> dict:
+    ret: dict = {
+        "required": not field.blank,
+        "type": "text",
+        "data": value,
+        "name": field.verbose_name,
+    }
+    return ret
 
 
 @genItemContent.register(models.TextField)
-def _(field: models.TextField, value: str) -> dict:
-    print("textarea block")
-    pass
+def _(field: models.TextField, value: str | bytes, is_picture: bool = False) -> dict:
+    if not is_picture:
+        ret: dict = {
+            "required": not field.blank,
+            "type": "textarea",
+            "data": value,
+            "name": field.verbose_name,
+            "cols": 40,
+            "rows": 30,
+        }
+    else:
+        ret: dict = {
+            "required": not field.blank,
+            "type": "picture",
+            "name": field.verbose_name,
+            "base64": base64.b64encode(value).decode(),
+        }
+    return ret
 
 
 @genItemContent.register(models.ForeignKey)
-def _(field: models.ForeignKey, value: str) -> dict:
-    print("text block(can't edit)")
-    pass
+def _(field: models.ForeignKey, value: str, model_name: str) -> dict:
+    ret: dict = {
+        "required": not field.blank,
+        "type": "link",
+        "data": value,
+        "name": field.verbose_name,
+        "link": "{}/{}".format(model_name, value),
+    }
+    return ret
 
 
 @genItemContent.register(models.DateTimeField)
-def _(field: models.ForeignKey, value: str) -> dict:
-    print("Datetime block")
-    pass
+def _(field: models.DateTimeField, value: datetime.datetime) -> dict:
+    ret: dict = {
+        "required": not field.blank,
+        "type": "time",
+        "name": field.verbose_name,
+    }
+    if value is not None:
+        ret["data"] = {
+            "date": value.date(),
+            "time": value.time(),
+        }
+    return ret

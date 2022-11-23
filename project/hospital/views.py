@@ -2,12 +2,11 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth, messages
 from django.http import HttpResponse
-import base64
 from pyecharts import options as opts
-from pyecharts.charts import Bar, Pie
+from pyecharts.charts import Pie
 from pyecharts.faker import Faker
 import json
-from .backend import ViewBackend
+from .backend import ViewBackend, ErrorMsg
 
 
 # Create your views here.
@@ -17,10 +16,14 @@ def index(request):
     path_list = request.path.strip('/').split('/')
     model_name = path_list[-1]
     if (model := ViewBackend.get_model(model_name)) is None:
-        messages.error(request, "找不到指定的项目")
+        messages.error(request, ErrorMsg.not_found.value)
         return redirect('/')
     search_value = request.GET.get("search")
-    search_results = ViewBackend.getIndexResult(auth.get_user(request), model, search_value)
+    try:
+        search_results = ViewBackend.getIndexResult(auth.get_user(request), model, search_value)
+    except PermissionError:
+        messages.error(request, ErrorMsg.no_permission_err.value)
+        return redirect('/')
     content['results'] = ViewBackend.extractIndexResults(search_results)
     for m in content['models']:
         if m['name'].replace(' ', '') == model_name:
@@ -47,7 +50,7 @@ def login(request):
             redirect_to = request.GET.get('next', '/')
             return redirect(redirect_to)
         else:
-            messages.error(request, "用户名或密码错误，登录失败")
+            messages.error(request, ErrorMsg.login_failed.value)
             return redirect(r'/hospital/login/', context={"next": request.POST['next']})
 
 
@@ -57,54 +60,19 @@ def logout(request):
 
 
 def form(request):
+    content = ViewBackend.genContent(request)
+    path_list = request.path.strip('/').split('/')
+    item_pk = path_list[-2]
+    model_name = path_list[-3]
+    if ((model := ViewBackend.get_model(model_name)) is None) or \
+            ((item := ViewBackend.getItem(auth.get_user(request), model, item_pk)) is None):
+        messages.error(request, ErrorMsg.not_found.value)
+        return redirect("/")
     if request.method == 'GET':
-        content = ViewBackend.genContent(request)
-        path_list = request.path.strip('/').split('/')
-        if len(path_list) < 2:
-            raise "Path error: " + request.path
-        mode = path_list[-1]
-        item_pk = path_list[-2]
-        model_name = path_list[-3]
-        if ((model := ViewBackend.get_model(model_name)) is None) or \
-           ((item := ViewBackend.getItem(auth.get_user(request), model, item_pk)) is None):
-            messages.error(request, "找不到指定的项目")
-            return redirect("/")
-
         ViewBackend.fillModelProperties(content, model_name)
         content['item'] = item_pk
         content['fieldset'] = ViewBackend.genFieldSet(item)
-        content['fieldset'] = [
-            {
-                "required": True,
-                "type": "text",
-                "name": "hhh",
-                "data": "qqqq"
-            },
-            {
-                "required": True,
-                "type": "textarea",
-                "name": "www",
-                "data": "eeee",
-                "cols": 40,
-                "rows": 30
-            },
-            {
-                "required": True,
-                "type": "select",
-                "name": "test_model2",
-                "opts": ["123", "qwe", "asd"],
-                # "edit_url": "",
-                "selected": "123"
-            },
-            {
-                "required": True,
-                "type": "picture",
-                "name": "photo",
-                "base64": base64.b64encode(open('hospital/templates/doctor_0.png', 'rb').read()).decode(),
-                "cols": 40,
-                "rows": 30
-            },
-        ]
+        # TODO: add button content fill method
         content["buttons"] = [
             {
                 "value": "hhh",
@@ -115,68 +83,44 @@ def form(request):
                 "name": "aaaa",
             },
         ]
-        # print(content)
         return render(request, r'change_form.html', context=content)
     elif request.method == 'POST':
-        print(request.body)
+        ViewBackend.updateItem(auth.get_user(request), item, request.POST, insert=False)
+        # TODO: check redirect action
         return redirect(request.path)
 
 
-def addform(request):
+def addForm(request):
     content = ViewBackend.genContent(request)
-    path_list = request.path.split('/')
-    if len(path_list) < 2:
-        raise "Path error: " + request.path
-    # item = path_list[-1] if path_list[-1] else path_list[-2]
-    model = path_list[-2] if path_list[-1] else path_list[-3]
-    for m in content['models']:
-        if m['name'] == model:
-            for k, v in m.items():
-                # 将选中的表的name等信息放到content直接索引中
-                content[k] = v
-            break
-    content['fieldset'] = [
-        {
-            "required": True,
-            "type": "text",
-            "name": "hhh",
-            "data": ""
-        },
-        {
-            "required": True,
-            "type": "textarea",
-            "name": "www",
-            "data": "",
-            "cols": 40,
-            "rows": 30
-        },
-        {
-            "required": True,
-            "type": "select",
-            "name": "test_model2",
-            "opts": ["123", "qwe", "asd"],
-            # "edit_url": "",
-            "selected": ""
-        },
-        {
-            "required": True,
-            "type": "picture",
-            "name": "photo",
-            "base64": "",
-            "cols": 40,
-            "rows": 30
-        },
-    ]
-    # print(content)
-    return render(request, r'change_form.html', context=content)
+    path_list = request.path.strip('/').split('/')
+    model_name = path_list[-2]
+    if (model := ViewBackend.get_model(model_name)) is None:
+        messages.error(request, ErrorMsg.not_found.value)
+        return redirect("/")
+    if request.method == 'GET':
+        ViewBackend.fillModelProperties(content, model_name)
+        content['fieldset'] = ViewBackend.genFieldSet(model, create=True)
+        return render(request, r'change_form.html', context=content)
+    elif request.method == 'POST':
+        ViewBackend.updateItem(auth.get_user(request), model, request.POST, insert=True)
+        # TODO: check redirect action
+        return redirect('./')
 
 
-def deleteform(request):
-    print(request.path)
-    path_list = request.path.split("/")
-    # TODO: delete selected item
-    # 重定向到二级目录
-    return redirect("/".join(path_list[:-2] if path_list[-1] else path_list[:-3]))
+def deleteForm(request):
+    user = auth.get_user(request)
+    path_list = request.path.strip("/").split("/")
+    if ((model := ViewBackend.get_model(path_list[-3])) is None) or \
+       ((item := ViewBackend.getItem(user, model, path_list[-2])) is None):
+        messages.error(request, ErrorMsg.not_found.value)
+        return redirect('/')
+    try:
+        ViewBackend.deleteItem(user, item)
+    except PermissionError:
+        messages.error(request, ErrorMsg.no_permission_err.value)
+
+    # redirect to List view
+    return redirect("../../")
 
 
 def graph(request):
@@ -222,6 +166,7 @@ def render_graph(request):
         .dump_options_with_quotes()
     )
     return json_response(json.loads(c))
+
 
 def ico(request):
     return HttpResponse(open(r'hospital\templates\ico\logo.png', 'rb').read(), content_type='image/jpg')
