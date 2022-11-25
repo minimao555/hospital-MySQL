@@ -74,7 +74,7 @@
             {% if graph %}
             <div style="display: block; margin:100px;" >
                 {% for g in graph %}
-                    <div id="{{ g }}" style="width:700px; height:700px; " align="center" ></div>
+                    <div id="{{ g }}" style="width:1000px; height:700px; " align="center" ></div>
                 {% endfor %}
                 <script>
                     function fetchData(chart, name) {
@@ -82,7 +82,7 @@
                             type: "POST",
                             url: "http://127.0.0.1:8000/graph/",
                             dataType: 'json',
-                            data: {name},
+                            data: {'name': name},
                             success: function (result) {
                                 chart.setOption(result.data);
                             }

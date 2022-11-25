@@ -4,9 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import auth, messages
 from django.http import HttpResponse
 from pyecharts import options as opts
-from pyecharts.charts import Pie
+from pyecharts.charts import Pie, Bar, Calendar, Line
 from pyecharts.faker import Faker
 import json
+import datetime
 from .backend import ViewBackend, ErrorMsg, AdvancedSearchType
 
 
@@ -154,11 +155,9 @@ def graph(request):
     content = ViewBackend.genContent(request)
 
     content['graph'] = [
-        'Pie',
-        'Pie1',
-        'Pie2',
-        'Pie3',
-        'Bar'
+        'patient_num_male_and_female',
+        'registration_num_type',
+        'total_payment_in_a_period_of_time',
     ]
 
     return render(request, r'change_list.html', context=content)
@@ -184,14 +183,48 @@ def json_response(data, code=200):
 
 
 def render_graph(request):
-    c = (
-        Pie()
-        .add("", [list(z) for z in zip(Faker.choose(), Faker.values())])
-        .set_colors(["blue", "green", "yellow", "red", "pink", "orange", "purple"])
-        .set_global_opts(title_opts=opts.TitleOpts(title="Pie-示例"))
-        .set_series_opts(label_opts=opts.LabelOpts(formatter="{b}: {c}"))
-        .dump_options_with_quotes()
-    )
+    c = '{}'
+    name = request.POST['name']
+    if name == 'patient_num_male_and_female':
+        data = ViewBackend().get_patient_num_male_and_female()
+        c = (
+            Pie()
+            .add("", data)
+            .set_colors(["yellow", "red"])
+            .set_global_opts(title_opts=opts.TitleOpts(title="病人男女数量"))
+            .set_series_opts(label_opts=opts.LabelOpts(formatter="{b}: {c}"))
+            .dump_options_with_quotes()
+        )
+    elif name == 'registration_num_type':
+        data = ViewBackend.get_registration_num_type()
+        c = (
+            Bar()
+            .add_xaxis([x[0] for x in next(iter(data.values()))])
+            .set_colors(["blue", "green", "yellow", "red", "pink", "orange", "purple", "black", "orange", "yellow"])
+            .set_global_opts(
+                title_opts=opts.TitleOpts(title="挂号单类型", subtitle=""),
+                datazoom_opts=[opts.DataZoomOpts(), opts.DataZoomOpts(type_="inside")]
+            )
+        )
+        for k, v in data.items():
+            c.add_yaxis(k, v)
+        c = c.dump_options_with_quotes()
+    elif name == 'total_payment_in_a_period_of_time':
+        year_begin = 1980
+        year_end = 2022
+        data = []
+        for year in range(year_begin, year_end + 1):
+            begin = datetime.date(year, 1, 1)
+            end = datetime.date(year, 12, 31)
+            d = ViewBackend.get_total_payment_in_a_period_of_time(str(begin), str(end))
+            data.append(d)
+        c = (
+            Line()
+            .add_xaxis([str(y) for y in range(year_begin, year_end + 1)])
+            .add_yaxis("商家A", data, is_smooth=True)
+            .set_global_opts(title_opts=opts.TitleOpts(title="营业额"))
+            .dump_options_with_quotes()
+        )
     return json_response(json.loads(c))
 
 

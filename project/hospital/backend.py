@@ -292,6 +292,41 @@ class ViewBackend:
             return cls.app.get_model(model_name)
         except LookupError:
             return None
+    
+    @classmethod
+    def get_registration_num_type(cls) -> dict[str: tuple[tuple[str, int]]]:
+        name = 'registrationslip'
+        table_name = 'registration_slip'
+        model = cls.get_model(name)
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT {0}.office FROM {0} GROUP BY {0}.office'.format(table_name))
+            office = cursor.fetchall()
+        res = {}
+        for offi in office:
+            query = 'SELECT {0}.type, COUNT({0}.type) FROM {0} WHERE {0}.office="{1}" GROUP BY {0}.type'.format(table_name, offi[0])
+            # print(query)
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                res[offi[0]] = cursor.fetchall()
+        return res
+    @classmethod
+    def get_patient_num_male_and_female(cls):
+        name = 'patient'
+        model = cls.get_model(name)
+        query = 'SELECT {0}.sex, COUNT({0}.sex) FROM {0} GROUP BY {0}.sex'.format(name)
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            return cursor.fetchall()
+
+    @classmethod
+    def get_total_payment_in_a_period_of_time(cls, begin: str, end: str):
+        name = 'paymentslip'
+        table_name = 'payment_slip'
+        model = cls.get_model(name)
+        query = "SELECT SUM({0}.amount) FROM {0} WHERE {0}.haspay = '是' AND {0}.time > '{1}' AND {0}.time <= '{2}'".format(table_name, begin, end)
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            return cursor.fetchall()
 
 
 @singledispatch
