@@ -2,6 +2,7 @@ from django.urls import path, include, re_path
 from . import views
 
 urlpatterns = [
+    path("favicon.ico", views.ico),
     # login entry
     path("login/", views.login),
     # logout entry

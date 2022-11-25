@@ -29,7 +29,7 @@
       <script id="django-admin-form-add-constants" src="/static/js/change_form.js" async=""></script>
       <script id="django-admin-prepopulated-fields-constants" src="/static/js/prepopulate_init.js" data-prepopulated-fields="[]"></script>
       <script>
-        var inputs = document.querySelector("fieldset").querySelectorAll("[required]").forEach((item, index) => {
+        document.querySelector("fieldset").querySelectorAll("[required]").forEach((item, index) => {
           item.addEventListener("change", (e) => {
             if(!e || !e.path) {
               return;

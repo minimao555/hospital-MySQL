@@ -91,7 +91,9 @@
                 {% for g in graph %}
                     $(
                         function () {
-                            fetchData(echarts.init(document.getElementById('{{ g }}'), 'white', {renderer: 'canvas'}), "{{ g }}");
+                            fetchData(
+                                echarts.init(document.getElementById('{{ g }}')),
+                                "{{ g }}");
                         }
                     );
                 {% endfor %}
