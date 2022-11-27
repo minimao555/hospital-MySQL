@@ -4,8 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import auth, messages
 from django.http import HttpResponse
 from pyecharts import options as opts
-from pyecharts.charts import Pie, Bar, Calendar, Line
-from pyecharts.faker import Faker
+from pyecharts.charts import Pie, Bar, Line
 import json
 import datetime
 from .backend import ViewBackend, ErrorMsg, AdvancedSearchType
