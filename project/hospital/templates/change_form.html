@@ -22,7 +22,7 @@
         <input type="submit" value="add another" name="goto">
         <input type="submit" value="continue edit" name="goto">
         {% for btn in buttons %}
-            <p><a href="{{ app }}{{ path }}/{{ name }}/?{{ btn.type }}={{ item }}" class="viewlink">{{ btn.value }}</a></p>
+            <p><a href="{{ app }}{{ path }}/{{ btn.type }}/?{{ name }}={{ item }}" class="viewlink">{{ btn.value }}</a></p>
         {% endfor %}
       </div>
       

@@ -21,12 +21,9 @@ def index(request):
         return redirect('/')
     search_value = request.GET.get("search")
     search_type = None
-    for search_type_candidate in AdvancedSearchType:
-        if search_type_candidate.value in request.GET:
-            search_type = search_type_candidate
-            search_value = request.GET.get(search_type_candidate.value)
-            model = ViewBackend.get_model(search_type.value)
-            break
+    if "doctor" in request.GET:     # advanced search link
+        search_type = "doctor"
+        search_value = request.GET.get("doctor")
     try:
         search_results = ViewBackend.getIndexResult(auth.get_user(request), model, search_value, search_type)
     except PermissionError:
@@ -39,7 +36,7 @@ def index(request):
                 # 将选中的表的name等信息放到content直接索引中
                 content[k] = v
             break
-    return render(request, r'change_list.html', context=content)
+    return render(request, './change_list.html'.format(model_name), context=content)
 
 
 def login(request):

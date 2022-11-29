@@ -220,15 +220,16 @@ class ViewBackend:
             else:
                 query = "SELECT * FROM {} where {} LIKE %s".format(model._meta.db_table, model._meta.pk.db_column)
                 return model.objects.raw(query, [search_value])
-        else:
-            if search_type == AdvancedSearchType.patient:
-                query = "SELECT * FROM patient WHERE patient.patientID IN " \
-                        "(SELECT medical_records.patientID FROM medical_records " \
-                        "WHERE medical_records.doctorID=%s)"
-                return model.objects.raw(query, [search_value])
-            elif search_type == AdvancedSearchType.mr:
-                query = "SELECT * FROM medical_records WHERE doctorID=%s"
-                return model.objects.raw(query, [search_value])
+        else:   # advanced search type
+            if search_type == "doctor":
+                if model._meta.model_name == "patient":
+                    query = "SELECT * FROM patient WHERE patient.patientID IN " \
+                            "(SELECT medical_records.patientID FROM medical_records " \
+                            "WHERE medical_records.doctorID=%s)"
+                    return model.objects.raw(query, [search_value])
+                elif model._meta.model_name == "medicalrecord":
+                    query = "SELECT * FROM medical_records WHERE doctorID=%s"
+                    return model.objects.raw(query, [search_value])
 
     @classmethod
     def getItem(cls, user: User, model: models.Model, pk: str) -> models.Model | None:
