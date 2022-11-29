@@ -269,6 +269,10 @@ class ViewBackend:
                     item_content = genItemContent(field, field_value, is_picture=True)
                 else:  # default param
                     item_content = genItemContent(field, field_value)
+                if 'phone' in field.name:
+                    item_content['check'] = 'phone'
+                if 'age' in field.name:
+                    item_content['check'] = 'age'
                 if field == item._meta.pk:
                     item_content["readonly"] = True
             else:

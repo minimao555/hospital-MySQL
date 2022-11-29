@@ -60,12 +60,12 @@
                         <!-- 一级目录的每一项 -->
                             <tr class="model-{{ model.name|lower }}{% if model.name in request.path|urlencode %} current-model{% endif %}">
                                 {% if model.name %}
-                                    <th scope="row"><a href="{{ path }}/{{ model.link }}"{% if model.name in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a></th>
+                                    <th scope="row"><a href="{{ app }}{{ path }}/{{ model.link }}"{% if model.name in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a></th>
                                 {% else %}
                                     <th scope="row">{{ model.name }}</th>
                                 {% endif %}
                                 <!-- 录入信息的按钮 -->
-                                <td><a href="{{ path }}/{{ model.link }}/add" class="addlink">增加</a></td>
+                                <td><a href="{{ app }}{{ path }}/{{ model.link }}/add" class="addlink">增加</a></td>
                             </tr>
                         {% endfor %}
                     </table>
